@@ -11,6 +11,7 @@ import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import { Product } from '@/lib/supabase'
 
 
+
 // Mock data - será substituído por dados reais do Supabase
 const mockProduct: Product = {
   id: '1',

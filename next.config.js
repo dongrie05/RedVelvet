@@ -4,9 +4,6 @@ const nextConfig = {
   images: {
     unoptimized: true
   },
-  // Para GitHub Pages, definimos o basePath
-  basePath: '/RedVelvet',
-  assetPrefix: '/RedVelvet/',
   eslint: {
     ignoreDuringBuilds: true,
   },
