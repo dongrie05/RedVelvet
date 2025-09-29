@@ -62,7 +62,7 @@ export const useWishlist = () => {
               loadFromLocalStorage()
             } else {
               console.log('❤️ Wishlist data from Supabase:', wishlistData)
-              const products = wishlistData?.map(item => item.products).filter(Boolean) as Product[]
+              const products = wishlistData?.map(item => item.products).filter(Boolean).flat() as Product[]
               setWishlist(products || [])
               setWishlistIds(products?.map(p => p.id) || [])
             }
