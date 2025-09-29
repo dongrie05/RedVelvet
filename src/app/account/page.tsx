@@ -5,8 +5,7 @@ import { useWishlist } from '@/hooks/useWishlist'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { User, ShoppingBag, Heart, Settings, LogOut, ArrowRight, X } from 'lucide-react'
-import Image from 'next/image'
+import { User, ShoppingBag, Heart, Settings, LogOut, ArrowRight } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import WishlistItemCard from '@/components/product/WishlistItemCard'
 
@@ -16,7 +15,7 @@ export default function AccountPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('profile')
-  const [orders, setOrders] = useState<any[]>([])
+  const [orders, setOrders] = useState<Record<string, unknown>[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
 
   useEffect(() => {

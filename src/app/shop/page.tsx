@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Grid, List, SlidersHorizontal } from 'lucide-react'
 import ProductCard from '@/components/product/ProductCard'
@@ -351,5 +351,9 @@ function ShopPageContent() {
 }
 
 export default function ShopPage() {
-  return <ShopPageContent />
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">A carregar loja...</div>}>
+      <ShopPageContent />
+    </Suspense>
+  )
 }

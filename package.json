@@ -9,8 +9,8 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "type-check": "tsc --noEmit",
-    "export": "next build && next export",
-    "deploy": "npm run export"
+    "export": "next build",
+    "deploy": "npm run build"
   },
   "dependencies": {
     "@mollie/api-client": "4.3.3",
