@@ -1,0 +1,126 @@
+{
+  "navigation": {
+    "home": "Home",
+    "shop": "Shop",
+    "about": "About",
+    "contact": "Contact",
+    "account": "Account",
+    "cart": "Cart",
+    "testimonials": "Testimonials"
+  },
+  "home": {
+    "title": "RedVelvet - Online Store",
+    "subtitle": "Discover unique and elegant products",
+    "featured_categories": "Featured Categories",
+    "featured_products": "Featured Products",
+    "decoracao": "Decoration",
+    "velas": "Candles",
+    "roupa": "Clothing"
+  },
+  "shop": {
+    "title": "Shop",
+    "filter_by_category": "Filter by Category",
+    "all_categories": "All Categories",
+    "sort_by": "Sort by",
+    "price_low_high": "Price: Low to High",
+    "price_high_low": "Price: High to Low",
+    "name_a_z": "Name: A-Z",
+    "name_z_a": "Name: Z-A"
+  },
+  "product": {
+    "add_to_cart": "Add to Cart",
+    "out_of_stock": "Out of Stock",
+    "in_stock": "In Stock",
+    "size": "Size",
+    "select_size": "Select Size",
+    "description": "Description",
+    "price": "Price",
+    "iva_included": "VAT included"
+  },
+  "cart": {
+    "title": "Cart",
+    "empty": "Your cart is empty",
+    "continue_shopping": "Continue Shopping",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "total": "Total",
+    "proceed_to_checkout": "Proceed to Checkout",
+    "remove_item": "Remove Item",
+    "update_quantity": "Update Quantity"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "billing_info": "Billing Information",
+    "payment_method": "Payment Method",
+    "order_summary": "Order Summary",
+    "place_order": "Place Order",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "city": "City",
+    "postal_code": "Postal Code",
+    "country": "Country"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "confirm_password": "Confirm Password",
+    "forgot_password": "Forgot Password?",
+    "no_account": "Don't have an account?",
+    "has_account": "Already have an account?"
+  },
+  "account": {
+    "title": "My Account",
+    "profile": "Profile",
+    "orders": "My Orders",
+    "order_history": "Order History",
+    "order_number": "Order Number",
+    "order_date": "Order Date",
+    "order_status": "Status",
+    "order_total": "Total"
+  },
+  "about": {
+    "title": "About Us",
+    "description": "RedVelvet is an online store specialized in unique and elegant products. We offer a carefully selected range of decoration items, aromatic candles, and exclusive clothing pieces.",
+    "contact_info": "Contact Information",
+    "email": "Email",
+    "phone": "Phone",
+    "social_media": "Social Media"
+  },
+  "testimonials": {
+    "title": "Testimonials",
+    "add_review": "Add Review",
+    "rating": "Rating",
+    "comment": "Comment",
+    "submit_review": "Submit Review",
+    "no_reviews": "No reviews yet for this product."
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "search": "Search",
+    "filter": "Filter",
+    "clear": "Clear",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "open": "Open",
+    "quantity": "Quantity",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "tax": "VAT",
+    "free": "Free",
+    "euros": "€"
+  }
+}

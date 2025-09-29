@@ -1,0 +1,126 @@
+{
+  "navigation": {
+    "home": "Início",
+    "shop": "Loja",
+    "about": "Sobre",
+    "contact": "Contactos",
+    "account": "Conta",
+    "cart": "Carrinho",
+    "testimonials": "Testemunhos"
+  },
+  "home": {
+    "title": "RedVelvet - Loja Online",
+    "subtitle": "Descubra produtos únicos e elegantes",
+    "featured_categories": "Categorias em Destaque",
+    "featured_products": "Produtos em Destaque",
+    "decoracao": "Decoração",
+    "velas": "Velas",
+    "roupa": "Roupa"
+  },
+  "shop": {
+    "title": "Loja",
+    "filter_by_category": "Filtrar por Categoria",
+    "all_categories": "Todas as Categorias",
+    "sort_by": "Ordenar por",
+    "price_low_high": "Preço: Menor para Maior",
+    "price_high_low": "Preço: Maior para Menor",
+    "name_a_z": "Nome: A-Z",
+    "name_z_a": "Nome: Z-A"
+  },
+  "product": {
+    "add_to_cart": "Adicionar ao Carrinho",
+    "out_of_stock": "Esgotado",
+    "in_stock": "Em Stock",
+    "size": "Tamanho",
+    "select_size": "Selecionar Tamanho",
+    "description": "Descrição",
+    "price": "Preço",
+    "iva_included": "IVA incluído"
+  },
+  "cart": {
+    "title": "Carrinho",
+    "empty": "O seu carrinho está vazio",
+    "continue_shopping": "Continuar a Comprar",
+    "subtotal": "Subtotal",
+    "shipping": "Portes de Envio",
+    "total": "Total",
+    "proceed_to_checkout": "Finalizar Compra",
+    "remove_item": "Remover Item",
+    "update_quantity": "Atualizar Quantidade"
+  },
+  "checkout": {
+    "title": "Finalizar Compra",
+    "billing_info": "Informações de Faturação",
+    "payment_method": "Método de Pagamento",
+    "order_summary": "Resumo do Pedido",
+    "place_order": "Efetuar Pedido",
+    "name": "Nome",
+    "email": "Email",
+    "phone": "Telefone",
+    "address": "Morada",
+    "city": "Cidade",
+    "postal_code": "Código Postal",
+    "country": "País"
+  },
+  "auth": {
+    "login": "Iniciar Sessão",
+    "register": "Registar",
+    "logout": "Sair",
+    "email": "Email",
+    "password": "Palavra-passe",
+    "confirm_password": "Confirmar Palavra-passe",
+    "forgot_password": "Esqueceu-se da palavra-passe?",
+    "no_account": "Não tem conta?",
+    "has_account": "Já tem conta?"
+  },
+  "account": {
+    "title": "A Minha Conta",
+    "profile": "Perfil",
+    "orders": "Os Meus Pedidos",
+    "order_history": "Histórico de Pedidos",
+    "order_number": "Número do Pedido",
+    "order_date": "Data do Pedido",
+    "order_status": "Estado",
+    "order_total": "Total"
+  },
+  "about": {
+    "title": "Sobre Nós",
+    "description": "A RedVelvet é uma loja online especializada em produtos únicos e elegantes. Oferecemos uma seleção cuidadosa de artigos de decoração, velas aromáticas e peças de roupa exclusivas.",
+    "contact_info": "Informações de Contacto",
+    "email": "Email",
+    "phone": "Telefone",
+    "social_media": "Redes Sociais"
+  },
+  "testimonials": {
+    "title": "Testemunhos",
+    "add_review": "Adicionar Avaliação",
+    "rating": "Avaliação",
+    "comment": "Comentário",
+    "submit_review": "Submeter Avaliação",
+    "no_reviews": "Ainda não há avaliações para este produto."
+  },
+  "common": {
+    "loading": "A carregar...",
+    "error": "Erro",
+    "success": "Sucesso",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "search": "Pesquisar",
+    "filter": "Filtrar",
+    "clear": "Limpar",
+    "back": "Voltar",
+    "next": "Seguinte",
+    "previous": "Anterior",
+    "close": "Fechar",
+    "open": "Abrir",
+    "quantity": "Quantidade",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "shipping": "Portes",
+    "tax": "IVA",
+    "free": "Grátis",
+    "euros": "€"
+  }
+}
