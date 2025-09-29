@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Grid, List, SlidersHorizontal } from 'lucide-react'
 import ProductCard from '@/components/product/ProductCard'
@@ -351,16 +351,5 @@ function ShopPageContent() {
 }
 
 export default function ShopPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-redvelvet-500 mx-auto mb-4"></div>
-          <p className="text-redvelvet-600">A carregar loja...</p>
-        </div>
-      </div>
-    }>
-      <ShopPageContent />
-    </Suspense>
-  )
+  return <ShopPageContent />
 }
