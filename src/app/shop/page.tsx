@@ -6,7 +6,7 @@ import { Grid, List, SlidersHorizontal } from 'lucide-react'
 import ProductCard from '@/components/product/ProductCard'
 import CategoryFilter from '@/components/product/CategoryFilter'
 import Breadcrumbs from '@/components/ui/Breadcrumbs'
-import { Product, supabase } from '@/lib/supabase'
+import { Product } from '@/lib/supabase'
 
 // Categorias base (podes substituir por query se tiveres tabela categories)
 
@@ -45,30 +45,18 @@ function ShopPageContent() {
     setLoading(true)
     setLoadError(null)
     try {
-      const envOk = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) && Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-      console.log('[Shop] Fetching products from Supabase...', { envOk })
-      const { data, error } = await supabase
-        .from('products')
-        .select('id,codigo,referencia,nome,descricao,categoria,preco,stock,tamanhos,imagem_url,iva,created_at,updated_at')
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('[Shop] Error loading products from Supabase:', error)
-        setLoadError('Não foi possível carregar os produtos. Verifique a ligação ao servidor.')
-        setProducts([])
-        setFilteredProducts([])
-      } else {
-        const normalized = (data || []).map((p: any) => ({
-          ...p,
-          preco: typeof p.preco === 'string' ? Number(p.preco) : p.preco,
-          iva: typeof p.iva === 'string' ? Number(p.iva) : p.iva,
-        })) as Product[]
-        setProducts(normalized)
-        setFilteredProducts(normalized)
-      }
+      const res = await fetch('/api/products', { cache: 'no-store' })
+      if (!res.ok) throw new Error('Falha a obter produtos')
+      const json = await res.json()
+      const normalized = (json?.data || []).map((p: any) => ({
+        ...p,
+        preco: typeof p.preco === 'string' ? Number(p.preco) : p.preco,
+        iva: typeof p.iva === 'string' ? Number(p.iva) : p.iva,
+      })) as Product[]
+      setProducts(normalized)
+      setFilteredProducts(normalized)
     } catch (err) {
       console.error('[Shop] Unexpected error loading products:', err)
-      setLoadError('Ocorreu um erro inesperado a carregar os produtos.')
       setProducts([])
       setFilteredProducts([])
     } finally {
@@ -271,12 +259,6 @@ function ShopPageContent() {
           <div className="flex-1">
             {loading && (
               <div className="card-luxury p-10 text-center text-redvelvet-600">A carregar produtos...</div>
-            )}
-            {loadError && !loading && (
-              <div className="card-luxury p-6 mb-6">
-                <p className="text-redvelvet-700 mb-4">{loadError}</p>
-                <button onClick={fetchProducts} className="btn-primary">Tentar novamente</button>
-              </div>
             )}
             {/* Toolbar */}
             <div className="card-luxury p-6 mb-6">
