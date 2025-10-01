@@ -19,6 +19,8 @@ function ShopPageContent() {
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
     searchParams.get('category')
   )
@@ -39,38 +41,44 @@ function ShopPageContent() {
     return Number.isNaN(num) ? 0 : num
   }
 
-  // Load products from Supabase (fetch all; client-side diacritic-insensitive filtering)
-  useEffect(() => {
-    const load = async () => {
-      try {
-        console.log('[Shop] Fetching products from Supabase...')
-        let req = supabase
-          .from('products')
-          .select('id,codigo,referencia,nome,descricao,categoria,preco,stock,tamanhos,imagem_url,iva,created_at,updated_at')
-          .order('created_at', { ascending: false })
-        const { data, error } = await req
+  const fetchProducts = async () => {
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const envOk = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) && Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+      console.log('[Shop] Fetching products from Supabase...', { envOk })
+      const { data, error } = await supabase
+        .from('products')
+        .select('id,codigo,referencia,nome,descricao,categoria,preco,stock,tamanhos,imagem_url,iva,created_at,updated_at')
+        .order('created_at', { ascending: false })
 
-        if (error) {
-          console.error('[Shop] Error loading products from Supabase:', error)
-          setProducts([])
-          setFilteredProducts([])
-        } else {
-          console.log('[Shop] Loaded products:', data?.length)
-          const normalized = (data || []).map((p: any) => ({
-            ...p,
-            preco: typeof p.preco === 'string' ? Number(p.preco) : p.preco,
-            iva: typeof p.iva === 'string' ? Number(p.iva) : p.iva,
-          })) as Product[]
-          setProducts(normalized)
-          setFilteredProducts(normalized)
-        }
-      } catch (err) {
-        console.error('[Shop] Unexpected error loading products:', err)
+      if (error) {
+        console.error('[Shop] Error loading products from Supabase:', error)
+        setLoadError('Não foi possível carregar os produtos. Verifique a ligação ao servidor.')
         setProducts([])
         setFilteredProducts([])
+      } else {
+        const normalized = (data || []).map((p: any) => ({
+          ...p,
+          preco: typeof p.preco === 'string' ? Number(p.preco) : p.preco,
+          iva: typeof p.iva === 'string' ? Number(p.iva) : p.iva,
+        })) as Product[]
+        setProducts(normalized)
+        setFilteredProducts(normalized)
       }
+    } catch (err) {
+      console.error('[Shop] Unexpected error loading products:', err)
+      setLoadError('Ocorreu um erro inesperado a carregar os produtos.')
+      setProducts([])
+      setFilteredProducts([])
+    } finally {
+      setLoading(false)
     }
-    load()
+  }
+
+  useEffect(() => {
+    fetchProducts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Ensure fresh data when navigating back/forward without full refresh
@@ -261,6 +269,15 @@ function ShopPageContent() {
 
           {/* Main Content */}
           <div className="flex-1">
+            {loading && (
+              <div className="card-luxury p-10 text-center text-redvelvet-600">A carregar produtos...</div>
+            )}
+            {loadError && !loading && (
+              <div className="card-luxury p-6 mb-6">
+                <p className="text-redvelvet-700 mb-4">{loadError}</p>
+                <button onClick={fetchProducts} className="btn-primary">Tentar novamente</button>
+              </div>
+            )}
             {/* Toolbar */}
             <div className="card-luxury p-6 mb-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -311,7 +328,7 @@ function ShopPageContent() {
             </div>
 
             {/* Products Grid/List */}
-            {filteredProducts.length > 0 ? (
+            {!loading && filteredProducts.length > 0 ? (
               <div className={
                 viewMode === 'grid'
                   ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
