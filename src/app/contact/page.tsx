@@ -239,25 +239,34 @@ export default function Contact() {
       <section className="section-spacing gradient-luxury">
         <div className="container-luxury">
           <div className="text-center mb-12 animate-fade-in-up">
-            <h2 className="heading-luxury text-3xl lg:text-4xl mb-6">
-              Encontre-nos
-            </h2>
+            <h2 className="heading-luxury text-3xl lg:text-4xl mb-6">Encontre-nos</h2>
             <p className="text-luxury text-xl max-w-2xl mx-auto">
               Visite o nosso showroom em Lisboa e descubra as nossas peças exclusivas.
             </p>
           </div>
-          
-          <div className="card-luxury p-8 animate-fade-in-up-delay">
-            <div className="aspect-[16/9] bg-gradient-to-br from-redvelvet-100 to-cream-200 border border-redvelvet-200 flex items-center justify-center">
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 bg-redvelvet-500/20 rounded-full flex items-center justify-center mx-auto">
-                  <MapPin size={32} className="text-redvelvet-500" />
-                </div>
-                <div>
-                  <p className="text-redvelvet-600 font-medium">Mapa Interativo</p>
-                  <p className="text-sm text-redvelvet-500">Avenida David Morão Ferreira, 55 A - Lisboa</p>
-                </div>
-              </div>
+
+          <div className="card-luxury p-2 animate-fade-in-up-delay">
+            <div className="aspect-[16/9] w-full overflow-hidden rounded-sm border border-redvelvet-200">
+              <iframe
+                title="Mapa - Avenida David Morão Ferreira, 55 A - Lisboa"
+                src="https://www.google.com/maps?q=Avenida%20David%20Mor%C3%A3o%20Ferreira%2C%2055%20A%2C%201750-220%20Lisboa&output=embed"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                loading="lazy"
+                allowFullScreen
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+            <div className="mt-3 text-center">
+              <a
+                href="https://www.google.com/maps/search/?api=1&query=Avenida%20David%20Mor%C3%A3o%20Ferreira%2C%2055%20A%2C%201750-220%20Lisboa"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-redvelvet-600 underline hover:text-redvelvet-700"
+              >
+                Abrir no Google Maps
+              </a>
             </div>
           </div>
         </div>
