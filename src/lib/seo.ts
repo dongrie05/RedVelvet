@@ -106,15 +106,16 @@ export function generateOrganizationSchema() {
 
 export function generateProductSchema(product: any) {
   const siteUrl = SEO_CONFIG.site.url
-  
-  return {
+  const imageUrl = product.imagem_url
+    ? (product.imagem_url.startsWith('http') ? product.imagem_url : `${siteUrl}${product.imagem_url}`)
+    : undefined
+
+  const schema: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: product.nome,
-    description: product.descricao,
-    image: product.imagem_url?.startsWith('http') 
-      ? product.imagem_url 
-      : `${siteUrl}${product.imagem_url}`,
+    name: product.nome ?? '',
+    description: product.descricao ?? product.nome ?? '',
+    ...(imageUrl && { image: imageUrl }),
     sku: product.codigo,
     mpn: product.referencia,
     brand: {
@@ -141,6 +142,7 @@ export function generateProductSchema(product: any) {
       reviewCount: '127',
     },
   }
+  return schema
 }
 
 export function generateBreadcrumbSchema(items: Array<{name: string, url: string}>) {

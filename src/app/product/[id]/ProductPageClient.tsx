@@ -185,7 +185,7 @@ export default function ProductPageClient() {
     )
   }
 
-  // Generate breadcrumbs for product page
+  // Generate breadcrumbs for product page (label/href para o componente Breadcrumbs)
   const getBreadcrumbs = () => {
     const categorySlug = getCategorySlug(product.categoria)
     const categoryHref = categorySlug ? `/shop?category=${categorySlug}` : '/shop'
@@ -197,13 +197,27 @@ export default function ProductPageClient() {
     ]
   }
 
+  // Schema SEO espera { name, url }; o último item não tem href (página atual)
+  const breadcrumbsForSchema = () => {
+    const base = getBreadcrumbs()
+    const siteUrl = typeof window !== 'undefined' ? window.location.origin : ''
+    return base.map((item, i) => ({
+      name: item.label,
+      url: item.href ? `${siteUrl}${item.href}` : (typeof window !== 'undefined' ? window.location.href : `${siteUrl}/product/${product.id}`)
+    }))
+  }
+
   return (
     <div className="min-h-screen bg-cream-50">
-      {/* Structured Data for Product */}
+      {/* Structured Data for Product - campos opcionais para evitar erro */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateProductSchema(product)),
+          __html: JSON.stringify(generateProductSchema({
+            ...product,
+            descricao: product.descricao ?? product.nome,
+            imagem_url: product.imagem_url ?? undefined
+          })),
         }}
       />
       
@@ -211,7 +225,7 @@ export default function ProductPageClient() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateBreadcrumbSchema(getBreadcrumbs())),
+          __html: JSON.stringify(generateBreadcrumbSchema(breadcrumbsForSchema())),
         }}
       />
       
