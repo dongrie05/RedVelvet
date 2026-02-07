@@ -12,6 +12,8 @@ interface OptimizedImageProps {
   quality?: number;
   placeholder?: 'blur' | 'empty';
   blurDataURL?: string;
+  /** Quando true, a imagem preenche o container (object-cover). O container deve ter tamanho definido (ex.: aspect-ratio). */
+  fill?: boolean;
 }
 
 export default function OptimizedImage({
@@ -25,6 +27,7 @@ export default function OptimizedImage({
   quality = 85,
   placeholder = 'empty',
   blurDataURL,
+  fill = false,
 }: OptimizedImageProps) {
   const [isLoading, setIsLoading] = useState(true);
 
@@ -36,16 +39,17 @@ export default function OptimizedImage({
       <Image
         src={src}
         alt={alt}
-        width={width}
-        height={height}
+        width={fill ? undefined : width}
+        height={fill ? undefined : height}
+        fill={fill}
         priority={priority}
         sizes={sizes}
         quality={quality}
         placeholder={placeholder}
         blurDataURL={blurDataURL}
         className={`transition-opacity duration-300 ${
-          isLoading ? 'opacity-0' : 'opacity-100'
-        }`}
+          fill ? 'object-cover' : ''
+        } ${isLoading ? 'opacity-0' : 'opacity-100'}`}
         onLoad={() => setIsLoading(false)}
         onError={() => setIsLoading(false)}
       />

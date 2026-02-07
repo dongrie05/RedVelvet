@@ -55,6 +55,7 @@ export default function ProductPageClient() {
   const { addToCart } = useCart()
   const { toggleWishlist, isInWishlist } = useWishlist()
   const [product, setProduct] = useState<Product | null>(null)
+  const [hasFetched, setHasFetched] = useState(false)
   const [reviews] = useState(mockReviews)
   const [selectedSize, setSelectedSize] = useState<string>('')
   const [quantity, setQuantity] = useState(1)
@@ -62,14 +63,34 @@ export default function ProductPageClient() {
   const [isAddingToCart, setIsAddingToCart] = useState(false)
 
   useEffect(() => {
-    // Simular carregamento do produto
-    setProduct(mockProduct)
-    
-    // Selecionar o primeiro tamanho por padrão se existir
-    if (mockProduct.tamanhos && mockProduct.tamanhos.length > 0) {
-      setSelectedSize(mockProduct.tamanhos[0])
+    const id = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : ''
+    setHasFetched(false)
+    if (!id) {
+      setProduct(null)
+      setHasFetched(true)
+      return
     }
-  }, [params.id])
+    fetch('/api/products', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((data) => {
+        const list = (data?.data || []) as Product[]
+        const normalized = list.map((p: Product) => ({
+          ...p,
+          preco: typeof p.preco === 'string' ? Number(p.preco) : p.preco,
+          iva: typeof p.iva === 'string' ? Number(p.iva) : p.iva
+        })) as Product[]
+        const found = normalized.find((p) => p.id === id) || null
+        setProduct(found)
+        if (found?.tamanhos && found.tamanhos.length > 0) {
+          setSelectedSize(found.tamanhos[0])
+        }
+        setHasFetched(true)
+      })
+      .catch(() => {
+        setProduct(null)
+        setHasFetched(true)
+      })
+  }, [params?.id])
 
   const handleAddToCart = async () => {
     if (!product) return
@@ -140,10 +161,25 @@ export default function ProductPageClient() {
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-cream-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-redvelvet-500 mx-auto mb-4"></div>
-          <p className="text-redvelvet-600">A carregar produto...</p>
+          {!hasFetched ? (
+            <>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-redvelvet-500 mx-auto mb-4"></div>
+              <p className="text-redvelvet-600">A carregar produto...</p>
+            </>
+          ) : (
+            <>
+              <p className="text-redvelvet-600 text-lg mb-6">Produto não encontrado.</p>
+              <Link
+                href="/shop"
+                className="inline-flex items-center gap-2 text-redvelvet-500 hover:text-redvelvet-600 font-medium"
+              >
+                <ArrowLeft size={20} />
+                Voltar à loja
+              </Link>
+            </>
+          )}
         </div>
       </div>
     )
@@ -188,7 +224,7 @@ export default function ProductPageClient() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images */}
           <div className="space-y-4">
-            <div className="aspect-square bg-white rounded-none overflow-hidden shadow-luxury">
+            <div className="relative aspect-square bg-white rounded-none overflow-hidden shadow-luxury">
               {product.imagem_url ? (
                 <Image
                   src={product.imagem_url}

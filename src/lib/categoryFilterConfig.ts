@@ -19,6 +19,7 @@
 export const EXCLUDED_CATEGORIES: string[] = [
   'NATAL',
   'VERAO',
+  'SERVICOS',
 ]
 
 /** Verifica se a categoria (normalizada) deve ser oculta */
