@@ -10,6 +10,7 @@ import { useWishlist } from '@/hooks/useWishlist'
 import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import { Product } from '@/lib/supabase'
 import { generateProductSchema, generateBreadcrumbSchema } from '@/lib/seo'
+import { formatCategoryDisplay, getCategorySlug } from '@/lib/categoryUtils'
 
 // Mock data - será substituído por dados reais do Supabase
 const mockProduct: Product = {
@@ -150,10 +151,12 @@ export default function ProductPageClient() {
 
   // Generate breadcrumbs for product page
   const getBreadcrumbs = () => {
+    const categorySlug = getCategorySlug(product.categoria)
+    const categoryHref = categorySlug ? `/shop?category=${categorySlug}` : '/shop'
     return [
       { label: 'Início', href: '/' },
       { label: 'Loja', href: '/shop' },
-      { label: product.categoria, href: `/shop?category=${product.categoria.toLowerCase()}` },
+      { label: formatCategoryDisplay(product.categoria), href: categoryHref },
       { label: product.nome }
     ]
   }
@@ -228,7 +231,7 @@ export default function ProductPageClient() {
             {/* Category */}
             <div className="flex items-center space-x-2">
               <span className="text-sm text-redvelvet-500 font-medium uppercase tracking-wide">
-                {product.categoria}
+                {formatCategoryDisplay(product.categoria)}
               </span>
               <span className="text-redvelvet-400">•</span>
               <span className="text-sm text-redvelvet-600">Código: {product.codigo}</span>

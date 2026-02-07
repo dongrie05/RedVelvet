@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { X, ShoppingCart } from 'lucide-react'
 import { Product } from '@/lib/supabase'
 import { useCart } from '@/hooks/useCart'
+import { formatCategoryDisplay } from '@/lib/categoryUtils'
 
 interface WishlistItemCardProps {
   product: Product
@@ -58,7 +59,7 @@ export default function WishlistItemCard({ product, onRemove }: WishlistItemCard
         {/* Info */}
         <div className="space-y-1">
           <div className="flex items-center space-x-2">
-            <span className="text-xs font-semibold text-redvelvet-500 uppercase tracking-widest">{product.categoria}</span>
+            <span className="text-xs font-semibold text-redvelvet-500 uppercase tracking-widest">{formatCategoryDisplay(product.categoria)}</span>
             <span className="w-1 h-1 bg-redvelvet-300 rounded-full" />
             <span className="text-xs text-redvelvet-400">{product.codigo}</span>
           </div>

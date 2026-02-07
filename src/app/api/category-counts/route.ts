@@ -11,7 +11,19 @@ export type CategoryCounts = {
 }
 
 function normalize(s: string) {
-  return (s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  return (s || '')
+    .replace(/\uFFFD/g, '')
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+}
+
+function isVelas(s: string) {
+  return s.includes('VELAS')
+}
+function isVestuario(s: string) {
+  return s.includes('VESTUARIO')
 }
 
 export async function GET() {
@@ -41,8 +53,8 @@ export async function GET() {
   let roupa = 0
   for (const row of list) {
     const cat = normalize(row.categoria || '')
-    if (cat.includes('VELAS')) velas += 1
-    else if (cat.includes('VESTUARIO')) roupa += 1
+    if (isVelas(cat)) velas += 1
+    else if (isVestuario(cat)) roupa += 1
   }
   const decorativeElements = Math.max(0, list.length - velas - roupa)
 

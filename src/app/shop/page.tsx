@@ -8,6 +8,12 @@ import CategoryFilter from '@/components/product/CategoryFilter'
 import type { CategoryOption } from '@/components/product/CategoryFilter'
 import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import { Product } from '@/lib/supabase'
+import {
+  normalizeCategoryForFilter,
+  isDecorativeCategory,
+  isVelasCategory,
+  isVestuarioCategory
+} from '@/lib/categoryUtils'
 
 const categories: CategoryOption[] = [
   { value: 'decorative-elements', label: 'Elementos Decorativos' },
@@ -15,20 +21,16 @@ const categories: CategoryOption[] = [
   { value: 'roupa', label: 'Roupa' }
 ]
 
-function normalizeCategory(s: string | undefined | null) {
-  return (s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-}
-
 function productMatchesCategorySlug(product: Product, slug: string | null): boolean {
   if (!slug) return true
-  const cat = normalizeCategory(product.categoria)
+  const cat = normalizeCategoryForFilter(product.categoria)
   switch (slug) {
     case 'velas':
-      return cat.includes('VELAS')
+      return isVelasCategory(cat)
     case 'roupa':
-      return cat.includes('VESTUARIO')
+      return isVestuarioCategory(cat)
     case 'decorative-elements':
-      return !cat.includes('VELAS') && !cat.includes('VESTUARIO')
+      return isDecorativeCategory(cat) || (!isVelasCategory(cat) && !isVestuarioCategory(cat))
     default:
       return true
   }

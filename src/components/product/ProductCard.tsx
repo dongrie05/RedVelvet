@@ -2,11 +2,11 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { ShoppingCart, Heart, Star } from 'lucide-react'
+import { ShoppingCart, Image as ImageIcon } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Product } from '@/lib/supabase'
 import { useCart } from '@/hooks/useCart'
-import { useWishlist } from '@/hooks/useWishlist'
+import { formatCategoryDisplay } from '@/lib/categoryUtils'
 
 interface ProductCardProps {
   product: Product
@@ -15,7 +15,6 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const { addToCart } = useCart()
-  const { toggleWishlist, isInWishlist } = useWishlist()
   const [selectedSize, setSelectedSize] = useState<string>('')
 
   useEffect(() => {
@@ -86,12 +85,6 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
     }
   }
 
-  const handleToggleWishlist = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    toggleWishlist(product)
-  }
-
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-PT', {
       style: 'currency',
@@ -122,7 +115,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
             </div>
             <div className="text-center space-y-3 relative z-10">
               <div className="w-20 h-20 bg-gradient-to-br from-redvelvet-100 to-redvelvet-200 rounded-full flex items-center justify-center mx-auto shadow-lg">
-                <Heart size={28} className="text-redvelvet-500" />
+                <ImageIcon size={28} className="text-redvelvet-500" />
               </div>
               <span className="text-redvelvet-600 text-sm font-medium tracking-wide">Imagem em breve</span>
             </div>
@@ -132,31 +125,10 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
         {/* Overlay gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-        {/* No intrusive toast; badge animates instead */}
-        
-        {/* Wishlist button */}
-        <button 
-          onClick={handleToggleWishlist}
-          className={`absolute top-4 right-4 p-3 backdrop-blur-md border rounded-full transition-all duration-300 ${
-            isInWishlist(product.id)
-              ? 'bg-redvelvet-500 border-redvelvet-500 hover:bg-redvelvet-600 shadow-lg'
-              : 'bg-white/80 border-redvelvet-200 hover:bg-white hover:shadow-lg opacity-0 group-hover:opacity-100'
-          }`}
-        >
-          <Heart 
-            size={18} 
-            className={`${
-              isInWishlist(product.id)
-                ? 'text-white fill-current'
-                : 'text-redvelvet-500'
-            }`} 
-          />
-        </button>
-
         {/* Category badge */}
         <div className="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
           <span className="bg-white/95 backdrop-blur-sm px-4 py-2 text-xs font-semibold text-redvelvet-700 border border-redvelvet-200 rounded-full shadow-lg">
-            {product.categoria}
+            {formatCategoryDisplay(product.categoria)}
           </span>
         </div>
 
@@ -170,13 +142,6 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
         )}
 
 
-        {/* Rating stars */}
-        <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-          <div className="bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full border border-redvelvet-200 shadow-lg flex items-center space-x-1">
-            <Star size={14} className="text-yellow-400 fill-current" />
-            <span className="text-xs font-semibold text-redvelvet-700">4.5</span>
-          </div>
-        </div>
       </div>
 
       {/* Product Info */}
@@ -184,7 +149,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
         {/* Category */}
         <div className="flex items-center space-x-2">
           <span className="text-xs font-semibold text-redvelvet-500 uppercase tracking-widest">
-            {product.categoria}
+            {formatCategoryDisplay(product.categoria)}
           </span>
           <div className="w-1 h-1 bg-redvelvet-300 rounded-full"></div>
           <span className="text-xs text-redvelvet-400">
