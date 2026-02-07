@@ -1,0 +1,51 @@
+# Quando fazes push para "dev", a Action faz o build e depois faz merge + push para "main".
+# Assim só precisas de: git push origin dev (a Action trata de atualizar o main e o Vercel faz deploy).
+
+name: Build e push para main
+
+on:
+  push:
+    branches: [ dev ]
+  workflow_dispatch:  # Permite correr manualmente no separador Actions
+
+permissions:
+  contents: write   # Necessário para a Action poder fazer push para main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          VERCEL: 1
+
+      - name: Merge dev into main e push
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git fetch origin main || true
+          if git ls-remote --exit-code --heads origin main >/dev/null 2>&1; then
+            git checkout -B main origin/main
+            git merge origin/dev --no-edit
+            git push origin main
+          else
+            git push origin dev:main
+          fi
