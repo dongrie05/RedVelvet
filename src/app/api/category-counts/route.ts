@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { isCategoryExcluded } from '@/lib/categoryFilterConfig'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -51,12 +52,17 @@ export async function GET() {
   const list = (rows || []) as { categoria: string | null }[]
   let velas = 0
   let roupa = 0
+  let excluded = 0
   for (const row of list) {
     const cat = normalize(row.categoria || '')
+    if (isCategoryExcluded(cat)) {
+      excluded += 1
+      continue
+    }
     if (isVelas(cat)) velas += 1
     else if (isVestuario(cat)) roupa += 1
   }
-  const decorativeElements = Math.max(0, list.length - velas - roupa)
+  const decorativeElements = Math.max(0, list.length - velas - roupa - excluded)
 
   const counts: CategoryCounts = {
     'decorative-elements': decorativeElements,

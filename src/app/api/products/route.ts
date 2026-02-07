@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { isCategoryExcluded } from '@/lib/categoryFilterConfig'
+import { normalizeCategoryForFilter } from '@/lib/categoryUtils'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -27,7 +29,7 @@ export async function GET() {
     )
   }
 
-  const data = (rows || []).map((row: Record<string, unknown>) => ({
+  const mapped = (rows || []).map((row: Record<string, unknown>) => ({
     ...row,
     id: String(row.id),
     preco: typeof row.preco === 'string' ? parseFloat(row.preco) : Number(row.preco),
@@ -36,6 +38,11 @@ export async function GET() {
     created_at: row.created_at ? String(row.created_at) : new Date().toISOString(),
     updated_at: row.updated_at ? String(row.updated_at) : new Date().toISOString()
   }))
+
+  const data = mapped.filter((row: Record<string, unknown>) => {
+    const cat = normalizeCategoryForFilter(String(row.categoria ?? ''))
+    return !isCategoryExcluded(cat)
+  })
 
   return NextResponse.json({ data })
 }

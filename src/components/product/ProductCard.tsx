@@ -132,9 +132,9 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
           </span>
         </div>
 
-        {/* Stock indicator */}
+        {/* Stock indicator - pointer-events-none para o clique abrir a página do produto */}
         {product.stock === 0 && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm pointer-events-none">
             <div className="bg-redvelvet-900 text-white px-6 py-3 rounded-full border border-redvelvet-800 shadow-xl">
               <span className="text-sm font-semibold uppercase tracking-wider">Esgotado</span>
             </div>
@@ -198,7 +198,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
           )}
         </div>
 
-        {/* Add to Cart Button */}
+        {/* Add to Cart Button - quando esgotado, pointer-events-none para o clique abrir a página */}
         <button
           onClick={(e) => {
             e.preventDefault()
@@ -208,7 +208,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
           disabled={product.stock === 0}
           className={`group flex items-center justify-center space-x-3 py-3 px-6 rounded-none transition-all duration-300 uppercase tracking-wider text-sm font-semibold w-full ${
             product.stock === 0
-              ? 'bg-redvelvet-200 text-redvelvet-400 cursor-not-allowed border border-redvelvet-200'
+              ? 'bg-redvelvet-200 text-redvelvet-400 cursor-pointer border border-redvelvet-200 pointer-events-none'
               : 'bg-redvelvet-500 hover:bg-redvelvet-600 text-white border border-redvelvet-500 hover:border-redvelvet-600 hover:shadow-lg'
           }`}
         >

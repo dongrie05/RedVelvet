@@ -64,9 +64,9 @@ export default function Home() {
 
   return (
     <AIOptimizedContent>
-      <div className="min-h-screen">
+      <div>
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative py-12 lg:py-16 xl:py-20 flex items-center overflow-hidden">
         {/* Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-cream-50 via-white to-cream-100"></div>
         
@@ -75,8 +75,8 @@ export default function Home() {
         <div className="absolute bottom-20 right-20 w-24 h-24 border border-redvelvet-300/20 rotate-12 animate-float" style={{animationDelay: '1s'}}></div>
         <div className="absolute top-1/2 left-10 w-16 h-16 border border-redvelvet-300/25 rotate-45 animate-float" style={{animationDelay: '2s'}}></div>
         
-        <div className="container-luxury relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div className="container-luxury relative z-10 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
             <div className="space-y-8 animate-fade-in-up">
               <div className="space-y-4">
                 <div className="flex items-center space-x-4">
@@ -118,7 +118,7 @@ export default function Home() {
                 <CategoryImage 
                   category="hero" 
                   priority={true}
-                  className="aspect-[4/5] rounded-lg shadow-luxury overflow-hidden"
+                  className="aspect-[4/5] max-h-[85vh] w-full object-cover rounded-lg shadow-luxury overflow-hidden"
                 />
                 
                 {/* Floating Elements */}
