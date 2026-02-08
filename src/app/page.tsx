@@ -114,11 +114,11 @@ export default function Home() {
             
             <div className="relative animate-fade-in-up-delay w-full">
               <div className="relative w-full overflow-hidden rounded-lg shadow-luxury">
-                {/* Hero Image: proporção 2:1 como a imagem (1200x600) para não deixar espaço em branco */}
+                {/* Hero Image: proporção 1:1 (quadrado) */}
                 <CategoryImage 
                   category="hero" 
                   priority={true}
-                  className="aspect-[2/1] w-full rounded-lg"
+                  className="aspect-square w-full max-w-2xl mx-auto rounded-lg"
                 />
                 
                 {/* Floating Elements */}

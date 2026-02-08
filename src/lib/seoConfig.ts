@@ -11,7 +11,7 @@ export const SEO_CONFIG = {
   business: {
     name: 'RedVelvet',
     email: 'info@redvelvet.pt',
-    phone: '+351-XXX-XXX-XXX',
+    phone: '+351916350502',
     address: {
       country: 'PT',
       locality: 'Lisboa',

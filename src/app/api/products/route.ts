@@ -19,7 +19,7 @@ export async function GET() {
   const supabase = createClient(url, anonKey)
   const { data: rows, error } = await supabase
     .from('products')
-    .select('id, codigo, referencia, nome, descricao, categoria, preco, stock, tamanhos, imagem_url, iva, created_at, updated_at')
+    .select('id, codigo, referencia, nome, descricao, categoria, preco, stock, tamanhos, imagem_url, galeria, iva, created_at, updated_at')
     .order('nome', { ascending: true })
 
   if (error) {
@@ -29,15 +29,22 @@ export async function GET() {
     )
   }
 
-  const mapped = (rows || []).map((row: Record<string, unknown>) => ({
-    ...row,
-    id: String(row.id),
-    preco: typeof row.preco === 'string' ? parseFloat(row.preco) : Number(row.preco),
-    stock: typeof row.stock === 'string' ? parseInt(row.stock, 10) : Number(row.stock ?? 0),
-    iva: typeof row.iva === 'string' ? parseFloat(row.iva) : Number(row.iva ?? 23),
-    created_at: row.created_at ? String(row.created_at) : new Date().toISOString(),
-    updated_at: row.updated_at ? String(row.updated_at) : new Date().toISOString()
-  }))
+  const mapped = (rows || []).map((row: Record<string, unknown>) => {
+    const galeriaRaw = row.galeria
+    const galeria = Array.isArray(galeriaRaw)
+      ? (galeriaRaw as unknown[]).map((u) => String(u)).filter(Boolean)
+      : []
+    return {
+      ...row,
+      id: String(row.id),
+      preco: typeof row.preco === 'string' ? parseFloat(row.preco) : Number(row.preco),
+      stock: typeof row.stock === 'string' ? parseInt(row.stock, 10) : Number(row.stock ?? 0),
+      iva: typeof row.iva === 'string' ? parseFloat(row.iva) : Number(row.iva ?? 23),
+      galeria,
+      created_at: row.created_at ? String(row.created_at) : new Date().toISOString(),
+      updated_at: row.updated_at ? String(row.updated_at) : new Date().toISOString()
+    }
+  })
 
   const data = mapped.filter((row: Record<string, unknown>) => {
     const cat = normalizeCategoryForFilter(String(row.categoria ?? ''))

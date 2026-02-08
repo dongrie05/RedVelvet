@@ -35,6 +35,8 @@ export interface Product {
   stock: number
   tamanhos?: string[]
   imagem_url?: string
+  /** URLs de fotos adicionais (2.ª e 3.ª foto). A 1.ª é imagem_url. */
+  galeria?: string[]
   iva: number
   created_at: string
   updated_at: string

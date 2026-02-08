@@ -136,11 +136,6 @@ export function generateProductSchema(product: any) {
       },
     },
     category: product.categoria,
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.8',
-      reviewCount: '127',
-    },
   }
   return schema
 }

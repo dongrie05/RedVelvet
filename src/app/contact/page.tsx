@@ -3,6 +3,17 @@
 import { useState } from 'react'
 import { Mail, Phone, MapPin, Clock, Send, CheckCircle } from 'lucide-react'
 
+const WHATSAPP_NUMBER = '351916350502'
+const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`
+
+const ASSUNTO_LABELS: Record<string, string> = {
+  duvida: 'Dúvida sobre produto',
+  pedido: 'Pedido especial',
+  devolucao: 'Devolução/Troca',
+  parceria: 'Parceria',
+  outro: 'Outro'
+}
+
 export default function Contact() {
   const [formData, setFormData] = useState({
     nome: '',
@@ -15,10 +26,21 @@ export default function Contact() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Aqui você pode integrar com um serviço de email ou API
-    console.log('Form submitted:', formData)
+    const assuntoLabel = formData.assunto ? ASSUNTO_LABELS[formData.assunto] || formData.assunto : ''
+    const text = [
+      '*Contacto RedVelvet*',
+      '',
+      `Nome: ${formData.nome}`,
+      `Email: ${formData.email}`,
+      formData.telefone ? `Telefone: ${formData.telefone}` : '',
+      assuntoLabel ? `Assunto: ${assuntoLabel}` : '',
+      '',
+      formData.mensagem
+    ].filter(Boolean).join('\n')
+    const url = `${WHATSAPP_URL}?text=${encodeURIComponent(text)}`
+    window.open(url, '_blank', 'noopener,noreferrer')
     setIsSubmitted(true)
-    setTimeout(() => setIsSubmitted(false), 3000)
+    setTimeout(() => setIsSubmitted(false), 4000)
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -73,6 +95,16 @@ export default function Contact() {
                   </div>
                 </div>
 
+                {/* Telefone */}
+                <div className="flex items-start space-x-4">
+                  <div className="w-12 h-12 bg-redvelvet-500/10 border border-redvelvet-300/30 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Phone size={20} className="text-redvelvet-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-redvelvet-900 mb-2">Telefone</h3>
+                    <a href="tel:+351916350502" className="text-luxury mb-1 hover:text-redvelvet-500 transition-colors">+351 916 350 502</a>
+                  </div>
+                </div>
 
                 {/* Address */}
                 <div className="flex items-start space-x-4">
@@ -110,7 +142,7 @@ export default function Contact() {
                   <a href="https://instagram.com/red_velvet_fashion_pt" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-redvelvet-500/10 border border-redvelvet-300/30 rounded-full flex items-center justify-center hover:bg-redvelvet-500 hover:text-white transition-colors duration-300">
                     <span className="text-sm font-semibold">ig</span>
                   </a>
-                  <a href="https://tiktok.com/@red_velvet_fashion_pt" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-redvelvet-500/10 border border-redvelvet-300/30 rounded-full flex items-center justify-center hover:bg-redvelvet-500 hover:text-white transition-colors duration-300">
+                  <a href="https://www.tiktok.com/@red_velvet_fashion_deco?_r=1&_t=ZG-93jMo7L9z29" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-redvelvet-500/10 border border-redvelvet-300/30 rounded-full flex items-center justify-center hover:bg-redvelvet-500 hover:text-white transition-colors duration-300">
                     <span className="text-sm font-semibold">tt</span>
                   </a>
                 </div>
@@ -129,8 +161,8 @@ export default function Contact() {
                     <div className="w-16 h-16 bg-green-100 border border-green-300 rounded-full flex items-center justify-center mx-auto mb-4">
                       <CheckCircle size={32} className="text-green-600" />
                     </div>
-                    <h3 className="text-xl font-semibold text-green-600 mb-2">Mensagem Enviada!</h3>
-                    <p className="text-luxury">Obrigado pelo seu contacto. Responderemos em breve.</p>
+                    <h3 className="text-xl font-semibold text-green-600 mb-2">Abrir WhatsApp</h3>
+                    <p className="text-luxury">O WhatsApp deve ter aberto com a sua mensagem. Se não abriu, use o número +351 916 350 502 para nos contactar.</p>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-6">

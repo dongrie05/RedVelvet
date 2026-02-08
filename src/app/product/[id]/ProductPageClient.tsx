@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, ShoppingCart, Heart, Star, Share2, Plus, Minus } from 'lucide-react'
+import { ArrowLeft, ShoppingCart, Heart, Share2, Plus, Minus } from 'lucide-react'
 import { useCart } from '@/hooks/useCart'
 import { useWishlist } from '@/hooks/useWishlist'
 import Breadcrumbs from '@/components/ui/Breadcrumbs'
@@ -29,38 +29,20 @@ const mockProduct: Product = {
   updated_at: new Date().toISOString()
 }
 
-const mockReviews = [
-  {
-    id: '1',
-    cliente_id: '1',
-    produto_id: '1',
-    rating: 5,
-    comentario: 'Excelente qualidade! O aroma é muito agradável e a vela dura bastante tempo.',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: '2',
-    cliente_id: '2',
-    produto_id: '1',
-    rating: 4,
-    comentario: 'Muito boa, recomendo!',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-]
-
 export default function ProductPageClient() {
   const params = useParams()
   const { addToCart } = useCart()
   const { toggleWishlist, isInWishlist } = useWishlist()
   const [product, setProduct] = useState<Product | null>(null)
   const [hasFetched, setHasFetched] = useState(false)
-  const [reviews] = useState(mockReviews)
   const [selectedSize, setSelectedSize] = useState<string>('')
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
+
+  useEffect(() => {
+    setSelectedImage(0)
+  }, [params?.id])
 
   useEffect(() => {
     const id = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : ''
@@ -155,10 +137,6 @@ export default function ProductPageClient() {
     }).format(price)
   }
 
-  const averageRating = reviews.length > 0 
-    ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length 
-    : 0
-
   if (!product) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-cream-50">
@@ -184,6 +162,14 @@ export default function ProductPageClient() {
       </div>
     )
   }
+
+  // Até 3 fotos: imagem principal + galeria (máx. 2 extras)
+  const productImages = useMemo(() => {
+    if (!product) return []
+    const main = product.imagem_url ? [product.imagem_url] : []
+    const extra = (product.galeria || []).slice(0, 2)
+    return [...main, ...extra].slice(0, 3)
+  }, [product])
 
   // Generate breadcrumbs for product page (label/href para o componente Breadcrumbs)
   const getBreadcrumbs = () => {
@@ -236,13 +222,13 @@ export default function ProductPageClient() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Product Images */}
+          {/* Product Images - até 3 fotos (principal + galeria) */}
           <div className="space-y-4">
             <div className="relative aspect-square bg-white rounded-none overflow-hidden shadow-luxury">
-              {product.imagem_url ? (
+              {productImages.length > 0 && productImages[selectedImage] ? (
                 <Image
-                  src={product.imagem_url}
-                  alt={product.nome}
+                  src={productImages[selectedImage]}
+                  alt={`${product.nome} - foto ${selectedImage + 1}`}
                   fill
                   className="object-cover"
                 />
@@ -257,23 +243,27 @@ export default function ProductPageClient() {
                 </div>
               )}
             </div>
-            
-            {/* Additional images placeholder */}
-            <div className="grid grid-cols-4 gap-2">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className={`aspect-square bg-cream-200 rounded-none cursor-pointer border-2 ${
-                    selectedImage === i - 1 ? 'border-redvelvet-500' : 'border-transparent'
-                  }`}
-                  onClick={() => setSelectedImage(i - 1)}
-                >
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-xs text-redvelvet-400">Img {i}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {productImages.length > 1 && (
+              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(productImages.length, 3)}, minmax(0, 1fr))` }}>
+                {productImages.map((url, i) => (
+                  <button
+                    key={url + i}
+                    type="button"
+                    className={`relative aspect-square bg-cream-100 rounded-none overflow-hidden border-2 transition-colors ${
+                      selectedImage === i ? 'border-redvelvet-500 ring-1 ring-redvelvet-500' : 'border-transparent hover:border-redvelvet-300'
+                    }`}
+                    onClick={() => setSelectedImage(i)}
+                  >
+                    <Image
+                      src={url}
+                      alt={`${product.nome} - miniatura ${i + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Product Info */}
@@ -289,26 +279,6 @@ export default function ProductPageClient() {
 
             {/* Product Name */}
             <h1 className="heading-luxury text-3xl lg:text-4xl">{product.nome}</h1>
-
-            {/* Rating */}
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    size={20}
-                    className={`${
-                      i < Math.floor(averageRating)
-                        ? 'text-yellow-400 fill-current'
-                        : 'text-gray-300'
-                    }`}
-                  />
-                ))}
-              </div>
-              <span className="text-sm text-gray-600">
-                {averageRating.toFixed(1)} ({reviews.length} avaliações)
-              </span>
-            </div>
 
             {/* Price */}
             <div className="space-y-2">
@@ -435,45 +405,6 @@ export default function ProductPageClient() {
               <span>Voltar à Loja</span>
             </Link>
           </div>
-        </div>
-
-        {/* Reviews Section */}
-        <div className="mt-16">
-          <h2 className="heading-luxury text-2xl lg:text-3xl mb-8">Avaliações</h2>
-          
-          {reviews.length > 0 ? (
-            <div className="space-y-6">
-              {reviews.map((review) => (
-                <div key={review.id} className="card-luxury p-6">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          size={16}
-                          className={`${
-                            i < review.rating
-                              ? 'text-yellow-400 fill-current'
-                              : 'text-redvelvet-300'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-sm text-redvelvet-600">
-                      {new Date(review.created_at).toLocaleDateString('pt-PT')}
-                    </span>
-                  </div>
-                  {review.comentario && (
-                    <p className="text-luxury">{review.comentario}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-redvelvet-600">Ainda não há avaliações para este produto.</p>
-            </div>
-          )}
         </div>
       </div>
     </div>

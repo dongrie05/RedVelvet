@@ -16,6 +16,7 @@ CREATE TABLE products (
     stock INTEGER DEFAULT 0,
     tamanhos TEXT[], -- Array de tamanhos disponíveis
     imagem_url TEXT,
+    galeria JSONB DEFAULT '[]', -- Até 3 URLs de fotos adicionais: ["url2", "url3"] (imagem_url = 1.ª foto)
     iva DECIMAL(5,2) DEFAULT 23.00,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
