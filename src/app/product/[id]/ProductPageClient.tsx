@@ -167,7 +167,8 @@ export default function ProductPageClient() {
   const productImages = useMemo(() => {
     if (!product) return []
     const main = product.imagem_url ? [product.imagem_url] : []
-    const extra = (product.galeria || []).slice(0, 2)
+    const galeria = Array.isArray(product.galeria) ? product.galeria : []
+    const extra = galeria.slice(0, 2).filter((u): u is string => typeof u === 'string')
     return [...main, ...extra].slice(0, 3)
   }, [product])
 
@@ -193,28 +194,40 @@ export default function ProductPageClient() {
     }))
   }
 
+  // Schemas SEO (em try/catch para não quebrar a página)
+  let productSchemaHtml = ''
+  let breadcrumbSchemaHtml = ''
+  try {
+    productSchemaHtml = JSON.stringify(
+      generateProductSchema({
+        ...product,
+        descricao: product.descricao ?? product.nome,
+        imagem_url: product.imagem_url ?? undefined
+      })
+    )
+  } catch (_) {
+    // ignora erro de schema
+  }
+  try {
+    breadcrumbSchemaHtml = JSON.stringify(generateBreadcrumbSchema(breadcrumbsForSchema()))
+  } catch (_) {
+    // ignora erro de schema
+  }
+
   return (
     <div className="min-h-screen bg-cream-50">
-      {/* Structured Data for Product - campos opcionais para evitar erro */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateProductSchema({
-            ...product,
-            descricao: product.descricao ?? product.nome,
-            imagem_url: product.imagem_url ?? undefined
-          })),
-        }}
-      />
-      
-      {/* Structured Data for Breadcrumbs */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateBreadcrumbSchema(breadcrumbsForSchema())),
-        }}
-      />
-      
+      {productSchemaHtml && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: productSchemaHtml }}
+        />
+      )}
+      {breadcrumbSchemaHtml && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: breadcrumbSchemaHtml }}
+        />
+      )}
       <div className="container-luxury py-8">
         {/* Breadcrumbs */}
         <div className="mb-8">

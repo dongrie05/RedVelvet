@@ -106,9 +106,11 @@ export function generateOrganizationSchema() {
 
 export function generateProductSchema(product: any) {
   const siteUrl = SEO_CONFIG.site.url
-  const imageUrl = product.imagem_url
-    ? (product.imagem_url.startsWith('http') ? product.imagem_url : `${siteUrl}${product.imagem_url}`)
-    : undefined
+  const img = product.imagem_url
+  const imageUrl =
+    img && typeof img === 'string'
+      ? (img.startsWith('http') ? img : `${siteUrl}${img}`)
+      : undefined
 
   const schema: Record<string, unknown> = {
     '@context': 'https://schema.org',
@@ -140,16 +142,21 @@ export function generateProductSchema(product: any) {
   return schema
 }
 
-export function generateBreadcrumbSchema(items: Array<{name: string, url: string}>) {
+export function generateBreadcrumbSchema(items: Array<{ name?: string; url?: string }>) {
+  const siteUrl = SEO_CONFIG.site.url
   return {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
-    itemListElement: items.map((item, index) => ({
-      '@type': 'ListItem',
-      position: index + 1,
-      name: item.name,
-      item: item.url.startsWith('http') ? item.url : `${SEO_CONFIG.site.url}${item.url}`,
-    })),
+    itemListElement: (items || []).map((item, index) => {
+      const url = typeof item.url === 'string' ? item.url : ''
+      const fullUrl = url.startsWith('http') ? url : `${siteUrl}${url || '/'}`
+      return {
+        '@type': 'ListItem',
+        position: index + 1,
+        name: typeof item.name === 'string' ? item.name : '',
+        item: fullUrl,
+      }
+    }),
   }
 }
 
