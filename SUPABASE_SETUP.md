@@ -108,27 +108,10 @@ npm run dev
    - Reset de password
    - Convites
 
-### **10. Configurar Webhook de Novos Pedidos (Email)**
+### **10. Configurar Webhooks (Para Produção)**
 
-Para receber um email sempre que existir uma nova linha na tabela `orders`:
-
-1. **Resend (envio de email):**
-   - Crie conta em [resend.com](https://resend.com) e obtenha uma API Key.
-   - No `.env.local` (e nas variáveis de ambiente da Vercel), defina:
-     - `RESEND_API_KEY=re_xxxx` (obrigatório)
-     - `NOTIFY_EMAIL_TO=redvelvet.homeliving@gmail.com` (opcional; é o valor por defeito)
-     - `NOTIFY_EMAIL_FROM=RedVelvet <onboarding@resend.dev>` (em teste; em produção use um domínio verificado no Resend)
-
-2. **Webhook no Supabase:**
-   - No painel do Supabase, vá a **Database > Webhooks** (ou **Integrations > Webhooks**).
-   - Crie um novo webhook:
-     - **Name:** `Novo pedido - notificar`
-     - **Table:** `orders`
-     - **Events:** marque **Insert**
-     - **URL:** `https://red-velvet-one.vercel.app/api/webhooks/new-order` (substitua pelo URL real do seu deploy)
-   - Guarde. Sempre que for inserida uma linha em `orders`, o Supabase envia um POST para esta URL e a aplicação envia um email para `NOTIFY_EMAIL_TO`.
-
-Ver também o ficheiro **NOTIFICACOES_PEDIDOS.md** para mais pormenores.
+1. **Vá para Database > Webhooks** no painel do Supabase.
+2. Configure webhooks conforme necessário (ex.: novos pedidos, atualizações de status).
 
 ---
 
