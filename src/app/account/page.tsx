@@ -9,13 +9,19 @@ import { User, ShoppingBag, Heart, Settings, LogOut, ArrowRight } from 'lucide-r
 import { supabase } from '@/lib/supabase'
 import WishlistItemCard from '@/components/product/WishlistItemCard'
 
+type OrderRow = { id: string; numero_pedido?: string; total: number; status: string; created_at: string; lista_produtos: unknown }
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: 'A aguardar pagamento', paid: 'Paga', shipped: 'Enviada', delivered: 'Entregue', cancelled: 'Cancelada',
+}
+
 export default function AccountPage() {
   const { user, signOut, loading } = useAuth()
   const { wishlist, removeFromWishlist } = useWishlist()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('profile')
-  const [orders, setOrders] = useState<Record<string, unknown>[]>([])
+  const [orders, setOrders] = useState<OrderRow[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
 
   useEffect(() => {
@@ -35,29 +41,18 @@ export default function AccountPage() {
       if (!user || activeTab !== 'orders') return
       try {
         setOrdersLoading(true)
-        const { data: customer } = await supabase
-          .from('customers')
-          .select('id')
-          .eq('user_id', user.id)
-          .single()
-
-        if (!customer) {
-          setOrders([])
-          setOrdersLoading(false)
-          return
-        }
-
+        // RLS devolve apenas as encomendas do próprio cliente (por conta ou email)
         const { data, error } = await supabase
           .from('orders')
           .select('id, numero_pedido, total, status, created_at, lista_produtos')
-          .eq('cliente_id', customer.id)
+          .neq('status', 'cancelled')
           .order('created_at', { ascending: false })
 
         if (error) {
           console.error('Error loading orders:', error)
           setOrders([])
         } else {
-          setOrders(data || [])
+          setOrders((data || []) as OrderRow[])
         }
       } catch (e) {
         console.error('Unexpected error loading orders:', e)
@@ -268,7 +263,7 @@ export default function AccountPage() {
                     ) : (
                       <div className="space-y-4">
                         {orders.map((order) => {
-                          const itemsCount = Array.isArray(order.lista_produtos) ? order.lista_produtos.length : (order.lista_produtos?.items?.length ?? 0)
+                          const itemsCount = Array.isArray(order.lista_produtos) ? (order.lista_produtos as { quantidade?: number }[]).reduce((n, l) => n + (l.quantidade || 1), 0) : 0
                           return (
                             <div key={order.id} className="border border-redvelvet-200 p-4 bg-white flex items-center justify-between">
                               <div className="space-y-1">
@@ -278,8 +273,7 @@ export default function AccountPage() {
                               </div>
                               <div className="text-right space-y-1">
                                 <div className="text-redvelvet-900 font-semibold">{new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(Number(order.total))}</div>
-                                <div className="text-xs uppercase tracking-wider text-redvelvet-500">{order.status}</div>
-                                <Link href={`/orders/${order.id}`} className="text-sm text-redvelvet-600 hover:text-redvelvet-500 underline">Detalhes</Link>
+                                <div className="text-xs uppercase tracking-wider text-redvelvet-500">{STATUS_LABEL[order.status] || order.status}</div>
                               </div>
                             </div>
                           )

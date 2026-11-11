@@ -26,7 +26,6 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
   }, [product.tamanhos])
 
   const handleAddToCart = () => {
-    console.log('Adding to cart:', product.nome)
     if (Array.isArray(product.tamanhos) && product.tamanhos.length > 0 && !selectedSize) {
       alert('Selecione um tamanho antes de adicionar ao carrinho.')
       return

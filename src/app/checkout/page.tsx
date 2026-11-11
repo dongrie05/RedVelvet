@@ -1,417 +1,233 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, CreditCard, Smartphone, Lock } from 'lucide-react'
+import { ArrowLeft, Lock, ShieldCheck, Truck } from 'lucide-react'
 import { useCart } from '@/hooks/useCart'
 import { useAuth } from '@/hooks/useAuth'
-import { CheckoutForm } from '@/types'
+import { calculateShipping, formatPrice, round2, SHIPPING_COUNTRIES, ShippingCountry } from '@/lib/shop'
+
+type Form = {
+  nome: string; email: string; telefone: string; morada: string; cidade: string
+  codigo_postal: string; pais: ShippingCountry; nif: string; notas: string
+}
+type Errors = Partial<Record<keyof Form | 'terms', string>>
 
 export default function CheckoutPage() {
-  const router = useRouter()
-  const { cart, clearCart } = useCart()
+  const { cart } = useCart()
   const { user } = useAuth()
-  const [formData, setFormData] = useState<CheckoutForm>({
-    nome: user?.nome || '',
-    email: user?.email || '',
-    telefone: user?.telefone || '',
-    endereco: user?.endereco || '',
-    cidade: '',
-    codigo_postal: '',
-    pais: 'Portugal',
-    metodo_pagamento: 'card'
+  const [form, setForm] = useState<Form>({
+    nome: '', email: '', telefone: '', morada: '', cidade: '', codigo_postal: '', pais: 'PT', nif: '', notas: '',
   })
+  const [acceptTerms, setAcceptTerms] = useState(false)
+  const [errors, setErrors] = useState<Errors>({})
+  const [serverError, setServerError] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
-  const [errors, setErrors] = useState<Partial<CheckoutForm>>({})
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  useEffect(() => {
+    if (!user) return
+    setForm((f) => ({
+      ...f,
+      nome: f.nome || user.nome || '',
+      email: f.email || user.email || '',
+      telefone: f.telefone || user.telefone || '',
+      morada: f.morada || user.endereco || '',
+    }))
+  }, [user])
+
+  const shipping = calculateShipping(cart.subtotal, form.pais)
+  const total = round2(cart.subtotal + shipping)
+
+  const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-    
-    // Clear error when user starts typing
-    if (errors[name as keyof CheckoutForm]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }))
-    }
+    setForm((f) => ({ ...f, [name]: value }))
+    if (errors[name as keyof Form]) setErrors((er) => ({ ...er, [name]: undefined }))
   }
 
-  const validateForm = (): boolean => {
-    const newErrors: Partial<CheckoutForm> = {}
-
-    if (!formData.nome.trim()) newErrors.nome = 'Nome é obrigatório'
-    if (!formData.email.trim()) newErrors.email = 'Email é obrigatório'
-    if (!formData.telefone.trim()) newErrors.telefone = 'Telefone é obrigatório'
-    if (!formData.endereco.trim()) newErrors.endereco = 'Morada é obrigatória'
-    if (!formData.cidade.trim()) newErrors.cidade = 'Cidade é obrigatória'
-    if (!formData.codigo_postal.trim()) newErrors.codigo_postal = 'Código postal é obrigatório'
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+  const validate = () => {
+    const e: Errors = {}
+    if (!form.nome.trim()) e.nome = 'Nome é obrigatório'
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) e.email = 'Email inválido'
+    if (form.telefone.replace(/\D/g, '').length < 9) e.telefone = 'Telefone inválido'
+    if (!form.morada.trim()) e.morada = 'Morada é obrigatória'
+    if (!form.cidade.trim()) e.cidade = 'Localidade é obrigatória'
+    if (form.pais.startsWith('PT') ? !/^\d{4}-\d{3}$/.test(form.codigo_postal.trim()) : !form.codigo_postal.trim())
+      e.codigo_postal = form.pais.startsWith('PT') ? 'Formato 1234-567' : 'Código postal é obrigatório'
+    if (form.nif && !/^\d{9}$/.test(form.nif.trim())) e.nif = 'NIF deve ter 9 dígitos'
+    if (!acceptTerms) e.terms = 'Tem de aceitar os termos para continuar'
+    setErrors(e)
+    return Object.keys(e).length === 0
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!validateForm()) return
-
+  const handleSubmit = async (ev: React.FormEvent) => {
+    ev.preventDefault()
+    setServerError('')
+    if (!validate()) return
     setIsProcessing(true)
-
     try {
-      // Simular processamento do pagamento
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Simular sucesso do pagamento
-      alert('Pedido realizado com sucesso!')
-      
-      // Limpar carrinho e redirecionar
-      clearCart()
-      router.push('/account/orders')
+      const res = await fetch('/api/checkout/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer: form,
+          items: cart.items.map((i) => ({ produto_id: i.produto_id, quantidade: i.quantidade, tamanho: i.tamanho })),
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data?.url) {
+        window.location.href = data.url
+        return
+      }
+      setServerError(data?.error || 'Não foi possível iniciar o pagamento. Tente novamente.')
     } catch {
-      alert('Erro ao processar o pagamento. Tente novamente.')
-    } finally {
-      setIsProcessing(false)
+      setServerError('Erro de ligação. Verifique a internet e tente novamente.')
     }
-  }
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('pt-PT', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(price)
+    setIsProcessing(false)
   }
 
   if (cart.items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-[60vh] bg-cream-50 flex items-center justify-center px-4">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Carrinho vazio
-          </h1>
-          <p className="text-gray-600 mb-8">
-            Adicione produtos ao carrinho antes de finalizar a compra.
-          </p>
-          <Link href="/shop" className="btn-primary">
-            Ir para a Loja
-          </Link>
+          <h1 className="heading-luxury text-2xl mb-4">O carrinho está vazio</h1>
+          <p className="text-redvelvet-600 mb-8">Adicione produtos ao carrinho antes de finalizar a compra.</p>
+          <Link href="/shop" className="btn-primary">Ir para a Loja</Link>
         </div>
       </div>
     )
   }
 
+  const field = (name: keyof Form, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}, full = false) => (
+    <div className={full ? 'md:col-span-2' : ''}>
+      <label htmlFor={name} className="block text-sm font-medium text-redvelvet-900 mb-2">{label}</label>
+      <input
+        id={name}
+        name={name}
+        value={form[name]}
+        onChange={onChange}
+        aria-invalid={!!errors[name]}
+        className={`input-field ${errors[name] ? 'border-red-500' : ''}`}
+        {...props}
+      />
+      {errors[name] && <p className="text-red-600 text-sm mt-1">{errors[name]}</p>}
+    </div>
+  )
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container-custom py-8">
-        {/* Header */}
+    <div className="min-h-screen bg-cream-50">
+      <div className="container-luxury py-8 lg:py-12">
         <div className="mb-8">
-          <Link
-            href="/cart"
-            className="inline-flex items-center space-x-2 text-primary-600 hover:text-primary-700 mb-4"
-          >
-            <ArrowLeft size={16} />
-            <span>Voltar ao Carrinho</span>
+          <Link href="/cart" className="inline-flex items-center gap-2 text-redvelvet-500 hover:text-redvelvet-600 mb-4">
+            <ArrowLeft size={16} /> <span>Voltar ao carrinho</span>
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Finalizar Compra</h1>
+          <h1 className="heading-luxury text-3xl">Finalizar compra</h1>
         </div>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Checkout Form */}
-          <div className="space-y-8">
-            {/* Billing Information */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                Informações de Faturação
-              </h2>
-
+        <form onSubmit={handleSubmit} noValidate className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          <div className="lg:col-span-3 space-y-8">
+            <section className="bg-white border border-redvelvet-100 p-6">
+              <h2 className="text-xl font-serif font-semibold text-redvelvet-900 mb-6">Contacto</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nome Completo *
-                  </label>
-                  <input
-                    type="text"
-                    name="nome"
-                    value={formData.nome}
-                    onChange={handleInputChange}
-                    className={`input-field ${errors.nome ? 'border-red-500' : ''}`}
-                    placeholder="O seu nome completo"
-                  />
-                  {errors.nome && (
-                    <p className="text-red-500 text-sm mt-1">{errors.nome}</p>
-                  )}
-                </div>
+                {field('nome', 'Nome completo *', { autoComplete: 'name' }, true)}
+                {field('email', 'Email *', { type: 'email', autoComplete: 'email', placeholder: 'nome@email.com' })}
+                {field('telefone', 'Telemóvel *', { type: 'tel', autoComplete: 'tel', placeholder: '912 345 678' })}
+              </div>
+            </section>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className={`input-field ${errors.email ? 'border-red-500' : ''}`}
-                    placeholder="seu@email.com"
-                  />
-                  {errors.email && (
-                    <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Telefone *
-                  </label>
-                  <input
-                    type="tel"
-                    name="telefone"
-                    value={formData.telefone}
-                    onChange={handleInputChange}
-                    className={`input-field ${errors.telefone ? 'border-red-500' : ''}`}
-                    placeholder="+351 XXX XXX XXX"
-                  />
-                  {errors.telefone && (
-                    <p className="text-red-500 text-sm mt-1">{errors.telefone}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    País
-                  </label>
-                  <select
-                    name="pais"
-                    value={formData.pais}
-                    onChange={handleInputChange}
-                    className="input-field"
-                  >
-                    <option value="Portugal">Portugal</option>
-                    <option value="Espanha">Espanha</option>
-                    <option value="França">França</option>
+            <section className="bg-white border border-redvelvet-100 p-6">
+              <h2 className="text-xl font-serif font-semibold text-redvelvet-900 mb-6">Morada de envio</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label htmlFor="pais" className="block text-sm font-medium text-redvelvet-900 mb-2">País / região *</label>
+                  <select id="pais" name="pais" value={form.pais} onChange={onChange} className="input-field">
+                    {Object.entries(SHIPPING_COUNTRIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
                 </div>
-
+                {field('morada', 'Morada *', { autoComplete: 'street-address', placeholder: 'Rua, número, andar' }, true)}
+                {field('codigo_postal', 'Código postal *', { autoComplete: 'postal-code', placeholder: '1000-000', inputMode: 'numeric' })}
+                {field('cidade', 'Localidade *', { autoComplete: 'address-level2' })}
+                {field('nif', 'NIF para fatura (opcional)', { inputMode: 'numeric', maxLength: 9 })}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Morada *
-                  </label>
-                  <input
-                    type="text"
-                    name="endereco"
-                    value={formData.endereco}
-                    onChange={handleInputChange}
-                    className={`input-field ${errors.endereco ? 'border-red-500' : ''}`}
-                    placeholder="Rua, número, andar"
-                  />
-                  {errors.endereco && (
-                    <p className="text-red-500 text-sm mt-1">{errors.endereco}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Cidade *
-                  </label>
-                  <input
-                    type="text"
-                    name="cidade"
-                    value={formData.cidade}
-                    onChange={handleInputChange}
-                    className={`input-field ${errors.cidade ? 'border-red-500' : ''}`}
-                    placeholder="Lisboa"
-                  />
-                  {errors.cidade && (
-                    <p className="text-red-500 text-sm mt-1">{errors.cidade}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Código Postal *
-                  </label>
-                  <input
-                    type="text"
-                    name="codigo_postal"
-                    value={formData.codigo_postal}
-                    onChange={handleInputChange}
-                    className={`input-field ${errors.codigo_postal ? 'border-red-500' : ''}`}
-                    placeholder="1000-000"
-                  />
-                  {errors.codigo_postal && (
-                    <p className="text-red-500 text-sm mt-1">{errors.codigo_postal}</p>
-                  )}
+                  <label htmlFor="notas" className="block text-sm font-medium text-redvelvet-900 mb-2">Notas (opcional)</label>
+                  <textarea id="notas" name="notas" value={form.notas} onChange={onChange} rows={3} maxLength={500} className="input-field" placeholder="Ex.: embrulho para oferta, horário de entrega" />
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* Payment Method */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                Método de Pagamento
-              </h2>
-
-              <div className="space-y-4">
-                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="metodo_pagamento"
-                    value="card"
-                    checked={formData.metodo_pagamento === 'card'}
-                    onChange={handleInputChange}
-                    className="mr-3"
-                  />
-                  <CreditCard size={20} className="mr-3 text-gray-600" />
-                  <div>
-                    <div className="font-medium">Cartão de Crédito/Débito</div>
-                    <div className="text-sm text-gray-600">Visa, Mastercard, American Express</div>
-                  </div>
-                </label>
-
-                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="metodo_pagamento"
-                    value="mbway"
-                    checked={formData.metodo_pagamento === 'mbway'}
-                    onChange={handleInputChange}
-                    className="mr-3"
-                  />
-                  <Smartphone size={20} className="mr-3 text-gray-600" />
-                  <div>
-                    <div className="font-medium">MB Way</div>
-                    <div className="text-sm text-gray-600">Pagamento rápido e seguro</div>
-                  </div>
-                </label>
-
-                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="metodo_pagamento"
-                    value="apple_pay"
-                    checked={formData.metodo_pagamento === 'apple_pay'}
-                    onChange={handleInputChange}
-                    className="mr-3"
-                  />
-                  <div className="mr-3 text-gray-600">🍎</div>
-                  <div>
-                    <div className="font-medium">Apple Pay</div>
-                    <div className="text-sm text-gray-600">Pagamento com Touch ID ou Face ID</div>
-                  </div>
-                </label>
-
-                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="metodo_pagamento"
-                    value="google_pay"
-                    checked={formData.metodo_pagamento === 'google_pay'}
-                    onChange={handleInputChange}
-                    className="mr-3"
-                  />
-                  <div className="mr-3 text-gray-600">📱</div>
-                  <div>
-                    <div className="font-medium">Google Pay</div>
-                    <div className="text-sm text-gray-600">Pagamento rápido e seguro</div>
-                  </div>
-                </label>
-              </div>
-            </div>
+            <section className="bg-white border border-redvelvet-100 p-6">
+              <h2 className="text-xl font-serif font-semibold text-redvelvet-900 mb-3">Pagamento</h2>
+              <p className="text-sm text-redvelvet-700">
+                Será redirecionado para a página segura da Mollie para pagar com <strong>MB WAY, Multibanco, cartão, Apple Pay</strong> ou outro método disponível.
+              </p>
+            </section>
           </div>
 
-          {/* Order Summary */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                Resumo do Pedido
-              </h2>
-
-              {/* Order Items */}
-              <div className="space-y-4 mb-6">
+          <aside className="lg:col-span-2">
+            <div className="bg-white border border-redvelvet-100 p-6 lg:sticky lg:top-28">
+              <h2 className="text-xl font-serif font-semibold text-redvelvet-900 mb-6">Resumo</h2>
+              <ul className="space-y-4 mb-6">
                 {cart.items.map((item) => (
-                  <div key={item.id} className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                      {item.imagem_url ? (
-                        <Image
-                          src={item.imagem_url}
-                          alt={item.nome}
-                          width={48}
-                          height={48}
-                          className="object-cover w-full h-full"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="text-xs text-gray-400">Img</span>
-                        </div>
-                      )}
+                  <li key={item.id} className="flex items-center gap-3">
+                    <div className="relative w-14 h-14 bg-cream-100 overflow-hidden flex-shrink-0">
+                      {item.imagem_url && <Image src={item.imagem_url} alt={item.nome} fill sizes="56px" className="object-cover" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {item.nome}
+                      <p className="text-sm font-medium text-redvelvet-900 truncate">{item.nome}</p>
+                      <p className="text-xs text-redvelvet-600">
+                        {item.tamanho ? `Tamanho ${item.tamanho} · ` : ''}Qtd. {item.quantidade}
                       </p>
-                      {item.tamanho && (
-                        <p className="text-xs text-gray-600">Tamanho: {item.tamanho}</p>
-                      )}
-                      <p className="text-xs text-gray-600">Qtd: {item.quantidade}</p>
                     </div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {formatPrice(item.preco * item.quantidade)}
-                    </p>
-                  </div>
+                    <p className="text-sm font-medium text-redvelvet-900">{formatPrice(item.preco * item.quantidade)}</p>
+                  </li>
                 ))}
-              </div>
+              </ul>
 
-              {/* Order Totals */}
-              <div className="space-y-3 border-t border-gray-200 pt-4">
+              <dl className="space-y-3 border-t border-redvelvet-100 pt-4 text-sm">
+                <div className="flex justify-between"><dt className="text-redvelvet-600">Subtotal</dt><dd>{formatPrice(cart.subtotal)}</dd></div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">{formatPrice(cart.subtotal)}</span>
+                  <dt className="text-redvelvet-600">Envio</dt>
+                  <dd>{shipping === 0 ? <span className="text-green-700">Grátis</span> : formatPrice(shipping)}</dd>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Portes de Envio</span>
-                  <span className="font-medium">
-                    {cart.shipping === 0 ? (
-                      <span className="text-green-600">Grátis</span>
-                    ) : (
-                      formatPrice(cart.shipping)
-                    )}
-                  </span>
+                <div className="flex justify-between text-lg font-semibold border-t border-redvelvet-100 pt-3">
+                  <dt>Total <span className="text-xs font-normal text-redvelvet-500">(IVA incluído)</span></dt>
+                  <dd className="text-redvelvet-500">{formatPrice(total)}</dd>
                 </div>
-                <div className="flex justify-between text-lg font-semibold border-t border-gray-200 pt-3">
-                  <span>Total</span>
-                  <span className="text-primary-600">{formatPrice(cart.total)}</span>
-                </div>
-              </div>
+              </dl>
 
-              {/* Security Info */}
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
-                  <Lock size={16} className="text-green-600" />
-                  <span>Pagamento 100% seguro</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
-                  <Lock size={16} className="text-green-600" />
-                  <span>Dados protegidos com SSL</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <Lock size={16} className="text-green-600" />
-                  <span>Devoluções gratuitas</span>
-                </div>
-              </div>
+              <label className="flex items-start gap-3 mt-6 text-sm text-redvelvet-800">
+                <input
+                  type="checkbox"
+                  checked={acceptTerms}
+                  onChange={(e) => { setAcceptTerms(e.target.checked); setErrors((er) => ({ ...er, terms: undefined })) }}
+                  className="mt-1"
+                />
+                <span>
+                  Li e aceito os <Link href="/terms" target="_blank" className="underline">Termos e Condições</Link> e a{' '}
+                  <Link href="/privacy" target="_blank" className="underline">Política de Privacidade</Link>.
+                </span>
+              </label>
+              {errors.terms && <p className="text-red-600 text-sm mt-1">{errors.terms}</p>}
 
-              {/* Place Order Button */}
+              {serverError && (
+                <div role="alert" className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm">{serverError}</div>
+              )}
+
               <button
                 type="submit"
                 disabled={isProcessing}
-                className={`w-full mt-6 py-3 px-6 rounded-lg font-medium transition-colors ${
-                  isProcessing
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-primary-600 hover:bg-primary-700 text-white'
-                }`}
+                className="w-full mt-6 py-4 px-6 font-medium bg-redvelvet-500 hover:bg-redvelvet-600 text-white disabled:opacity-60 disabled:cursor-wait transition-colors"
               >
-                {isProcessing ? 'A processar...' : `Efetuar Pedido - ${formatPrice(cart.total)}`}
+                {isProcessing ? 'A redirecionar para o pagamento…' : `Encomendar e pagar ${formatPrice(total)}`}
               </button>
+
+              <ul className="mt-6 space-y-2 text-xs text-redvelvet-600">
+                <li className="flex items-center gap-2"><Lock size={14} className="text-green-700" /> Pagamento seguro processado pela Mollie</li>
+                <li className="flex items-center gap-2"><Truck size={14} className="text-green-700" /> Envio grátis em Portugal Continental a partir de 50 €</li>
+                <li className="flex items-center gap-2"><ShieldCheck size={14} className="text-green-700" /> 14 dias para devolução</li>
+              </ul>
             </div>
-          </div>
+          </aside>
         </form>
       </div>
     </div>

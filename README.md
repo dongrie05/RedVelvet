@@ -1,97 +1,43 @@
-# RedVelvet - Loja Online
+# RedVelvet — Loja Online
 
-Uma loja online elegante e sofisticada para produtos únicos de decoração, velas e roupa.
+Next.js 15 (App Router) · Supabase (produtos, clientes, encomendas) · Mollie (MB WAY, Multibanco, cartão, Apple Pay) · Vercel.
 
-## 🚀 Deploy Automático
+## Fluxo de compra
 
-Este projeto está configurado para fazer deploy automático usando GitHub Actions. Tens duas opções:
+`Produto → Carrinho (localStorage) → /checkout → POST /api/checkout → Mollie → /checkout/success`
 
-### Opção 1: GitHub Pages (Gratuito)
+- **/api/checkout** recalcula preços, portes e stock **a partir da base de dados** (o browser nunca define o preço), cria a encomenda `pending` e o pagamento Mollie.
+- **/api/webhooks/mollie** recebe a confirmação, marca a encomenda `paid` e desconta stock (idempotente).
+- **/api/orders/[id]** mostra o estado na página de sucesso (protegido por token da encomenda).
+- Regras de portes: `src/lib/shop.ts`. Dados legais da empresa: `src/lib/business.ts`.
 
-1. **Ativa GitHub Pages no teu repositório:**
-   - Vai a `Settings` > `Pages`
-   - Em `Source`, seleciona `GitHub Actions`
+## ✅ Checklist para começar a vender
 
-2. **Configura os Secrets necessários:**
-   - Vai a `Settings` > `Secrets and variables` > `Actions`
-   - Adiciona estes secrets:
-     ```
-     NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-     NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-     MOLLIE_API_KEY=your_mollie_api_key
-     SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-     ```
+1. **Supabase → SQL Editor**: correr `supabase/migrations/20261111_launch_checkout_security.sql`
+   (remove a permissão que deixava qualquer utilizador registado alterar preços, e adiciona as colunas do checkout).
+2. **Vercel → Settings → Environment Variables** (ver `env.example`):
+   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
+   `MOLLIE_API_KEY`, `NEXT_PUBLIC_APP_URL` e `NEXT_PUBLIC_SITE_URL` (domínio final, ex. `https://redvelvet.pt`),
+   `ADMIN_SECRET`, `NEXT_PUBLIC_BUSINESS_LEGAL_NAME`, `NEXT_PUBLIC_BUSINESS_NIF`.
+3. **Mollie**: ativar MB WAY, Multibanco e cartões no dashboard. Primeiro testar com chave `test_…`, depois trocar para `live_…`.
+4. **Compra de teste** ponta a ponta com a chave de teste → confirmar a encomenda `paid` na tabela `orders` e o stock descontado.
+5. Rever os textos de **Termos**, **Privacidade** e **Envios** (`/terms`, `/privacy`, `/shipping`) e os preços de envio para Ilhas/Espanha.
+6. Registar a loja no **Livro de Reclamações Eletrónico** (obrigatório; o link já está no rodapé).
 
-3. **Faz push para a branch `main`:**
-   ```bash
-   git add .
-   git commit -m "Deploy setup"
-   git push origin main
-   ```
+## Gerir encomendas
 
-4. **O site estará disponível em:**
-   `https://dongrie05.github.io/RedVelvet/`
+No Supabase, tabela `orders`: filtrar `status = paid` para ver o que expedir. Depois de enviar, mudar para `shipped`.
 
-### Opção 2: Vercel (Recomendado)
+## Importar produtos
 
-1. **Cria conta no Vercel:**
-   - Vai a [vercel.com](https://vercel.com)
-   - Regista-te com a tua conta GitHub
+`/admin/import` (password = `ADMIN_SECRET`). Imagens/stock/tamanhos editam-se depois na tabela `products`.
 
-2. **Importa o projeto:**
-   - Clica em "New Project"
-   - Seleciona o repositório `RedVelvet`
-   - Clica em "Import"
-
-3. **Configura as variáveis de ambiente:**
-   - Vai a `Settings` > `Environment Variables`
-   - Adiciona as mesmas variáveis da Opção 1
-
-4. **Deploy automático:**
-   - O Vercel fará deploy automático sempre que fizeres push para `main`
-   - O site estará disponível em: `https://redvelvet-xxx.vercel.app`
-
-## 🛠️ Desenvolvimento Local
+## Desenvolvimento
 
 ```bash
-# Instalar dependências
+cp env.example .env.local
 npm install
-
-# Executar em modo desenvolvimento
 npm run dev
-
-# Build para produção
-npm run build
-
-# Export estático (para GitHub Pages)
-npm run export
 ```
 
-## 📧 Informações de Contacto
-
-- **Email**: redvelvet.homeliving@gmail.com
-- **Morada**: Avenida David Morão Ferreira, 55 A - 1750-220 Lisboa
-- **Horário**: Segunda-Sexta: 15h00-17h00, Sábado: 10h00-19h00
-- **Instagram**: [@red_velvet_fashion_pt](https://instagram.com/red_velvet_fashion_pt)
-- **TikTok**: [@red_velvet_fashion_pt](https://tiktok.com/@red_velvet_fashion_pt)
-
-## 🛍️ Funcionalidades
-
-- ✅ Catálogo de produtos com filtros
-- ✅ Carrinho de compras
-- ✅ Lista de desejos (wishlist)
-- ✅ Sistema de autenticação
-- ✅ Pagamentos com Mollie (MB Way, Multibanco, etc.)
-- ✅ Design responsivo
-- ✅ Integração com Supabase
-
-## 🚀 Próximos Passos
-
-1. Faz push do código para o GitHub
-2. Configura os secrets necessários
-3. Ativa GitHub Pages ou conecta ao Vercel
-4. O teu site estará online automaticamente!
-
----
-
-**Desenvolvido com ❤️ para RedVelvet**
+Nota: em `localhost` a Mollie não consegue chamar o webhook; o estado é confirmado quando o cliente volta à página de sucesso.

@@ -10,7 +10,7 @@ export const SEO_CONFIG = {
   
   business: {
     name: 'RedVelvet',
-    email: 'info@redvelvet.pt',
+    email: 'redvelvet.homeliving@gmail.com',
     phone: '+351916350502',
     address: {
       country: 'PT',
@@ -21,13 +21,13 @@ export const SEO_CONFIG = {
   },
   
   social: {
-    twitter: '@redvelvet',
-    facebook: 'https://www.facebook.com/redvelvet',
-    instagram: 'https://www.instagram.com/redvelvet',
+    twitter: '',
+    facebook: '',
+    instagram: 'https://instagram.com/red_velvet_fashion_pt',
   },
   
   analytics: {
-    googleAnalytics: process.env.NEXT_PUBLIC_GA_ID || 'G-XXXXXXXXXX',
+    googleAnalytics: process.env.NEXT_PUBLIC_GA_ID || '',
     googleSiteVerification: process.env.GOOGLE_SITE_VERIFICATION,
   },
   

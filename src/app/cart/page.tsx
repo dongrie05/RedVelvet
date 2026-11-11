@@ -5,14 +5,11 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft } from 'lucide-react'
 import { useCart } from '@/hooks/useCart'
-import { useAuth } from '@/hooks/useAuth'
+import { formatPrice, FREE_SHIPPING_THRESHOLD } from '@/lib/shop'
 
 export default function CartPage() {
   const { cart, updateQuantity, removeFromCart, clearCart } = useCart()
-  const { user } = useAuth()
   const [isUpdating, setIsUpdating] = useState<string | null>(null)
-  const [isClearing, setIsClearing] = useState(false)
-  const [isCheckingOut, setIsCheckingOut] = useState(false)
 
   const handleQuantityUpdate = async (itemId: string, newQuantity: number) => {
     setIsUpdating(itemId)
@@ -34,16 +31,10 @@ export default function CartPage() {
     setIsUpdating(null)
   }
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('pt-PT', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(price)
-  }
 
   if (cart.items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-cream-50">
         <div className="container-custom py-16">
           <div className="text-center">
             <div className="mb-8">
@@ -70,7 +61,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-cream-50">
       <div className="container-custom py-8">
         {/* Header */}
         <div className="mb-8">
@@ -124,7 +115,7 @@ export default function CartPage() {
                       <button
                         onClick={() => handleQuantityUpdate(item.id, item.quantidade - 1)}
                         disabled={isUpdating === item.id || item.quantidade <= 1}
-                        className="p-2 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-2 hover:bg-cream-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Minus size={16} />
                       </button>
@@ -134,7 +125,7 @@ export default function CartPage() {
                       <button
                         onClick={() => handleQuantityUpdate(item.id, item.quantidade + 1)}
                         disabled={isUpdating === item.id}
-                        className="p-2 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-2 hover:bg-cream-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Plus size={16} />
                       </button>
@@ -164,11 +155,10 @@ export default function CartPage() {
             {/* Clear Cart Button */}
             <div className="text-center pt-4">
               <button
-                onClick={async () => { setIsClearing(true); await clearCart(); setIsClearing(false) }}
-                disabled={isClearing}
-                className={`text-red-600 hover:text-red-700 text-sm font-medium ${isClearing ? 'opacity-60 cursor-not-allowed' : ''}`}
+                onClick={() => { if (confirm('Remover todos os produtos do carrinho?')) clearCart() }}
+                className="text-red-600 hover:text-red-700 text-sm font-medium"
               >
-                {isClearing ? 'A limpar…' : 'Limpar carrinho'}
+                Limpar carrinho
               </button>
             </div>
           </div>
@@ -202,9 +192,9 @@ export default function CartPage() {
                 {/* Shipping Info */}
                 {cart.shipping > 0 && (
                   <div className="text-sm text-gray-500">
-                    <p>Envio grátis a partir de €50</p>
+                    <p>Envio grátis em Portugal Continental a partir de 50 €</p>
                     <p className="text-green-600">
-                      Faltam {formatPrice(50 - cart.subtotal)} para envio grátis
+                      Faltam {formatPrice(FREE_SHIPPING_THRESHOLD - cart.subtotal)} para envio grátis
                     </p>
                   </div>
                 )}
@@ -219,39 +209,9 @@ export default function CartPage() {
                 </div>
 
                 {/* Checkout Button */}
-                <button
-                  onClick={async () => {
-                    setIsCheckingOut(true)
-                    try {
-                      const res = await fetch('/api/checkout', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          userId: user?.id,
-                          items: cart.items.map(i => ({
-                            produto_id: i.produto_id,
-                            nome: i.nome,
-                            preco: i.preco,
-                            quantidade: i.quantidade,
-                            tamanho: i.tamanho
-                          }))
-                        })
-                      })
-                      const data = await res.json()
-                      if (data?.url) window.location.href = data.url
-                      else alert('Não foi possível iniciar o pagamento. Tente novamente.')
-                    } catch (err) {
-                      console.error(err)
-                      alert('Erro ao iniciar pagamento')
-                    } finally {
-                      setIsCheckingOut(false)
-                    }
-                  }}
-                  disabled={isCheckingOut}
-                  className="w-full btn-primary text-center block py-3"
-                >
-                  {isCheckingOut ? 'A finalizar…' : 'Finalizar Compra'}
-                </button>
+                <Link href="/checkout" className="w-full btn-primary text-center block py-3">
+                  Finalizar Compra
+                </Link>
 
                 {/* Continue Shopping */}
                 <Link
@@ -280,7 +240,7 @@ export default function CartPage() {
                   <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
                     <span className="text-white text-xs">✓</span>
                   </div>
-                  <span>Devoluções gratuitas</span>
+                  <span>14 dias para devolução</span>
                 </div>
               </div>
             </div>

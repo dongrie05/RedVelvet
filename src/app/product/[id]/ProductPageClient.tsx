@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { useParams } from 'next/navigation'
+import { useState, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft, ShoppingCart, Heart, Share2, Plus, Minus } from 'lucide-react'
@@ -11,83 +10,27 @@ import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import { Product } from '@/lib/supabase'
 import { generateProductSchema, generateBreadcrumbSchema } from '@/lib/seo'
 import { formatCategoryDisplay, getCategorySlug } from '@/lib/categoryUtils'
+import { formatPrice } from '@/lib/shop'
+import { SEO_CONFIG } from '@/lib/seoConfig'
 
-// Mock data - será substituído por dados reais do Supabase
-const mockProduct: Product = {
-  id: '1',
-  codigo: 'DEC001',
-  referencia: 'REF001',
-  nome: 'Vela Aromática Lavanda',
-  descricao: 'Vela artesanal com aroma relaxante de lavanda, perfeita para criar um ambiente acolhedor. Feita com cera de soja 100% natural e pavio de algodão, esta vela oferece uma queima limpa e duradoura. O aroma suave de lavanda ajuda a relaxar e criar uma atmosfera tranquila em qualquer espaço.',
-  categoria: 'Velas',
-  preco: 24.90,
-  stock: 15,
-  tamanhos: ['Pequena', 'Média', 'Grande'],
-  imagem_url: '/images/vela-lavanda.jpg',
-  iva: 23,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString()
-}
-
-export default function ProductPageClient() {
-  const params = useParams()
+export default function ProductPageClient({ product }: { product: Product }) {
   const { addToCart } = useCart()
   const { toggleWishlist, isInWishlist } = useWishlist()
-  const [product, setProduct] = useState<Product | null>(null)
-  const [hasFetched, setHasFetched] = useState(false)
-  const [selectedSize, setSelectedSize] = useState<string>('')
+  const [selectedSize, setSelectedSize] = useState<string>(product.tamanhos?.[0] ?? '')
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
-  const [isAddingToCart, setIsAddingToCart] = useState(false)
+  const [added, setAdded] = useState(false)
 
-  useEffect(() => {
-    setSelectedImage(0)
-  }, [params?.id])
+  // Até 3 fotos: imagem principal + galeria (máx. 2 extras)
+  const productImages = useMemo(() => {
+    const main = product.imagem_url ? [product.imagem_url] : []
+    const galeria = Array.isArray(product.galeria) ? product.galeria : []
+    const extra = galeria.slice(0, 2).filter((u): u is string => typeof u === 'string')
+    return [...main, ...extra].slice(0, 3)
+  }, [product])
 
-  useEffect(() => {
-    const id = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : ''
-    setHasFetched(false)
-    if (!id) {
-      setProduct(null)
-      setHasFetched(true)
-      return
-    }
-    fetch('/api/products', { cache: 'no-store' })
-      .then((res) => res.json())
-      .then((data) => {
-        const list = (data?.data || []) as Product[]
-        const normalized = list.map((p: Product) => ({
-          ...p,
-          preco: typeof p.preco === 'string' ? Number(p.preco) : p.preco,
-          iva: typeof p.iva === 'string' ? Number(p.iva) : p.iva
-        })) as Product[]
-        const found = normalized.find((p) => p.id === id) || null
-        setProduct(found)
-        if (found?.tamanhos && found.tamanhos.length > 0) {
-          setSelectedSize(found.tamanhos[0])
-        }
-        setHasFetched(true)
-      })
-      .catch(() => {
-        setProduct(null)
-        setHasFetched(true)
-      })
-  }, [params?.id])
-
-  const handleAddToCart = async () => {
-    if (!product) return
-
-    // Validar se um tamanho foi selecionado quando necessário
-    if (product.tamanhos && product.tamanhos.length > 0 && !selectedSize) {
-      alert('Por favor, selecione um tamanho antes de adicionar ao carrinho.')
-      return
-    }
-
-    setIsAddingToCart(true)
-    
-    // Simular delay de adição ao carrinho
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
+  const handleAddToCart = () => {
+    if (product.tamanhos && product.tamanhos.length > 0 && !selectedSize) return
     addToCart({
       produto_id: product.id,
       nome: product.nome,
@@ -96,15 +39,11 @@ export default function ProductPageClient() {
       tamanho: selectedSize || undefined,
       imagem_url: product.imagem_url
     })
-    
-    setIsAddingToCart(false)
-    
-    // Mostrar feedback de sucesso
-    alert('Produto adicionado ao carrinho!')
+    setAdded(true)
+    setTimeout(() => setAdded(false), 4000)
   }
 
   const handleToggleWishlist = () => {
-    if (!product) return
     toggleWishlist(product)
   }
 
@@ -130,47 +69,6 @@ export default function ProductPageClient() {
     }
   }
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('pt-PT', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(price)
-  }
-
-  if (!product) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-cream-50">
-        <div className="text-center">
-          {!hasFetched ? (
-            <>
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-redvelvet-500 mx-auto mb-4"></div>
-              <p className="text-redvelvet-600">A carregar produto...</p>
-            </>
-          ) : (
-            <>
-              <p className="text-redvelvet-600 text-lg mb-6">Produto não encontrado.</p>
-              <Link
-                href="/shop"
-                className="inline-flex items-center gap-2 text-redvelvet-500 hover:text-redvelvet-600 font-medium"
-              >
-                <ArrowLeft size={20} />
-                Voltar à loja
-              </Link>
-            </>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  // Até 3 fotos: imagem principal + galeria (máx. 2 extras)
-  const productImages = useMemo(() => {
-    if (!product) return []
-    const main = product.imagem_url ? [product.imagem_url] : []
-    const galeria = Array.isArray(product.galeria) ? product.galeria : []
-    const extra = galeria.slice(0, 2).filter((u): u is string => typeof u === 'string')
-    return [...main, ...extra].slice(0, 3)
-  }, [product])
 
   // Generate breadcrumbs for product page (label/href para o componente Breadcrumbs)
   const getBreadcrumbs = () => {
@@ -187,10 +85,10 @@ export default function ProductPageClient() {
   // Schema SEO espera { name, url }; o último item não tem href (página atual)
   const breadcrumbsForSchema = () => {
     const base = getBreadcrumbs()
-    const siteUrl = typeof window !== 'undefined' ? window.location.origin : ''
+    const siteUrl = SEO_CONFIG.site.url
     return base.map((item, i) => ({
       name: item.label,
-      url: item.href ? `${siteUrl}${item.href}` : (typeof window !== 'undefined' ? window.location.href : `${siteUrl}/product/${product.id}`)
+      url: item.href ? `${siteUrl}${item.href}` : `${siteUrl}/product/${product.id}/`
     }))
   }
 
@@ -243,6 +141,8 @@ export default function ProductPageClient() {
                   src={productImages[selectedImage]}
                   alt={`${product.nome} - foto ${selectedImage + 1}`}
                   fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-cover"
                 />
               ) : (
@@ -299,7 +199,7 @@ export default function ProductPageClient() {
                 {formatPrice(product.preco)}
               </div>
               <div className="text-sm text-redvelvet-600">
-                IVA incluído • Envio grátis a partir de €50
+                IVA incluído · Envio grátis em Portugal Continental a partir de 50 €
               </div>
             </div>
 
@@ -360,7 +260,7 @@ export default function ProductPageClient() {
             <div className="text-sm">
               {product.stock > 0 ? (
                 <span className="text-green-600">
-                  ✓ {product.stock} unidades em stock
+                  ✓ {product.stock <= 3 ? `Últimas ${product.stock} unidades` : 'Em stock'}
                 </span>
               ) : (
                 <span className="text-red-600">✗ Esgotado</span>
@@ -371,16 +271,16 @@ export default function ProductPageClient() {
             <div className="space-y-4">
               <button
                 onClick={handleAddToCart}
-                disabled={product.stock === 0 || isAddingToCart}
+                disabled={product.stock <= 0}
                 className={`w-full flex items-center justify-center space-x-2 py-3 px-6 rounded-none font-medium transition-colors ${
-                  product.stock === 0 || isAddingToCart
+                  product.stock <= 0
                     ? 'bg-redvelvet-300 text-redvelvet-500 cursor-not-allowed'
                     : 'bg-redvelvet-500 hover:bg-redvelvet-600 text-white'
                 }`}
               >
                 <ShoppingCart size={20} />
                 <span>
-                  {isAddingToCart ? 'A adicionar...' : 'Adicionar ao Carrinho'}
+                  {product.stock <= 0 ? 'Esgotado' : 'Adicionar ao Carrinho'}
                 </span>
               </button>
 
@@ -408,6 +308,13 @@ export default function ProductPageClient() {
                 </button>
               </div>
             </div>
+
+            {added && (
+              <div role="status" className="flex items-center justify-between gap-4 p-4 bg-green-50 border border-green-200 text-green-800 text-sm">
+                <span>Produto adicionado ao carrinho.</span>
+                <Link href="/cart" className="font-medium underline">Ver carrinho</Link>
+              </div>
+            )}
 
             {/* Back button */}
             <Link

@@ -144,7 +144,7 @@ ALTER TABLE wishlist ENABLE ROW LEVEL SECURITY;
 
 -- Products: Everyone can read, only authenticated users can modify
 CREATE POLICY "Products are viewable by everyone" ON products FOR SELECT USING (true);
-CREATE POLICY "Products are editable by authenticated users" ON products FOR ALL USING (auth.role() = 'authenticated');
+-- Produtos só são editados no servidor (service role). Ver supabase/migrations.
 
 -- Customers: Users can only see their own data
 CREATE POLICY "Customers can view own profile" ON customers FOR SELECT USING (auth.uid() = user_id);
@@ -155,9 +155,7 @@ CREATE POLICY "Customers can insert own profile" ON customers FOR INSERT WITH CH
 CREATE POLICY "Customers can view own orders" ON orders FOR SELECT USING (
     cliente_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
 );
-CREATE POLICY "Customers can create own orders" ON orders FOR INSERT WITH CHECK (
-    cliente_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
-);
+-- Encomendas são criadas apenas pelo servidor (/api/checkout).
 
 -- Reviews: Users can only see and create their own reviews
 CREATE POLICY "Reviews are viewable by everyone" ON reviews FOR SELECT USING (true);
@@ -170,7 +168,6 @@ CREATE POLICY "Customers can update own reviews" ON reviews FOR UPDATE USING (
 
 -- Categories: Everyone can read
 CREATE POLICY "Categories are viewable by everyone" ON categories FOR SELECT USING (true);
-CREATE POLICY "Categories are editable by authenticated users" ON categories FOR ALL USING (auth.role() = 'authenticated');
 
 -- Wishlist: Users can only manage their own wishlist
 CREATE POLICY "Customers can view own wishlist" ON wishlist FOR SELECT USING (
@@ -182,3 +179,4 @@ CREATE POLICY "Customers can add to own wishlist" ON wishlist FOR INSERT WITH CH
 CREATE POLICY "Customers can remove from own wishlist" ON wishlist FOR DELETE USING (
     cliente_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
 );
+-- Depois deste ficheiro, correr também supabase/migrations/*.sql por ordem.
