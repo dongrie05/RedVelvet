@@ -43,7 +43,7 @@ export function generateMetadata(config: SEOConfig): Metadata {
       },
     },
     openGraph: {
-      type: ogType,
+      type: ogType === 'product' ? 'website' : ogType,
       locale: SEO_CONFIG.site.locale,
       url: canonical ? `${siteUrl}${canonical}` : siteUrl,
       siteName: SEO_CONFIG.site.name,
@@ -60,8 +60,8 @@ export function generateMetadata(config: SEOConfig): Metadata {
     },
     twitter: {
       card: 'summary_large_image',
-      site: SEO_CONFIG.social.twitter,
-      creator: SEO_CONFIG.social.twitter,
+      site: SEO_CONFIG.social.twitter || undefined,
+      creator: SEO_CONFIG.social.twitter || undefined,
       title: fullTitle,
       description,
       images: [ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`],
@@ -97,10 +97,7 @@ export function generateOrganizationSchema() {
       contactType: 'customer service',
       availableLanguage: ['Portuguese', 'English'],
     },
-    sameAs: [
-      SEO_CONFIG.social.instagram,
-      SEO_CONFIG.social.facebook,
-    ],
+    sameAs: [SEO_CONFIG.social.instagram, SEO_CONFIG.social.facebook].filter(Boolean),
   }
 }
 

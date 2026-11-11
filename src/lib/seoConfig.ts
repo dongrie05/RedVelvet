@@ -10,7 +10,7 @@ export const SEO_CONFIG = {
   
   business: {
     name: 'RedVelvet',
-    email: 'info@redvelvet.pt',
+    email: 'redvelvet.homeliving@gmail.com',
     phone: '+351916350502',
     address: {
       country: 'PT',
@@ -21,13 +21,13 @@ export const SEO_CONFIG = {
   },
   
   social: {
-    twitter: '@redvelvet',
-    facebook: 'https://www.facebook.com/redvelvet',
-    instagram: 'https://www.instagram.com/redvelvet',
+    twitter: '',
+    facebook: '',
+    instagram: 'https://instagram.com/red_velvet_fashion_pt',
   },
   
   analytics: {
-    googleAnalytics: process.env.NEXT_PUBLIC_GA_ID || 'G-XXXXXXXXXX',
+    googleAnalytics: process.env.NEXT_PUBLIC_GA_ID || '',
     googleSiteVerification: process.env.GOOGLE_SITE_VERIFICATION,
   },
   
@@ -85,27 +85,27 @@ export const SEO_CONFIG = {
   aiOptimizedFAQs: [
     {
       question: "O que é a RedVelvet?",
-      answer: "A RedVelvet é uma loja online portuguesa especializada em produtos únicos de decoração, velas aromáticas artesanais e roupa elegante. Oferecemos uma curadoria cuidadosa de peças selecionadas para criar ambientes sofisticados e memoráveis."
+      answer: "A RedVelvet é uma loja portuguesa, online e com loja física em Lisboa, de decoração, velas aromáticas e roupa, com peças escolhidas uma a uma."
     },
     {
       question: "Que tipos de produtos vendem?",
-      answer: "Vendemos três categorias principais: elementos decorativos únicos, velas aromáticas artesanais e roupa elegante. Todos os produtos são selecionados pela sua qualidade premium e design refinado."
+      answer: "Três coleções: decoração para a casa, velas aromáticas e decorativas, e roupa."
     },
     {
       question: "Fazem envios para todo o Portugal?",
-      answer: "Sim, fazemos envios para todo o território português continental e ilhas. Os prazos de entrega variam entre 2-5 dias úteis dependendo da localização."
+      answer: "Sim, enviamos para Portugal Continental, Açores, Madeira e Espanha, com entrega em 2 a 5 dias úteis. O envio é grátis em Portugal Continental a partir de 50 €."
     },
     {
       question: "Qual é a política de devoluções?",
-      answer: "Oferecemos 30 dias para devoluções em produtos não personalizados. O produto deve estar nas mesmas condições de recebimento, com etiquetas e embalagem originais."
+      answer: "Tem 14 dias após a receção para devolver qualquer artigo, sem indicar motivo. Basta enviar-nos um email com o número da encomenda. Os detalhes estão na página Envios e Devoluções."
     },
     {
-      question: "As velas são feitas à mão?",
-      answer: "Sim, todas as nossas velas são artesanais e feitas à mão com cera de soja natural e óleos essenciais de qualidade premium. Cada vela é única e cuidadosamente elaborada."
+      question: "Que formas de pagamento aceitam?",
+      answer: "MB WAY, Multibanco, cartão de crédito/débito e Apple Pay, através da plataforma segura Mollie. Não guardamos os dados do seu cartão."
     },
     {
       question: "Como posso contactar o apoio ao cliente?",
-      answer: "Pode contactar-nos através do email info@redvelvet.pt ou através do formulário de contacto no nosso site. Respondemos normalmente em 24 horas durante dias úteis."
+      answer: "Pelo WhatsApp ou telefone +351 916 350 502, pelo email redvelvet.homeliving@gmail.com, ou na nossa loja na Avenida David Morão Ferreira, 55 A, em Lisboa."
     }
   ]
 }

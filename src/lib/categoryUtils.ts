@@ -36,8 +36,8 @@ export function formatCategoryDisplay(categoria: string | undefined | null): str
   if (categoria == null || categoria === '') return ''
   const n = normalizeCategoryForFilter(categoria)
   if (isVelasCategory(n)) return 'Velas'
-  if (isVestuarioCategory(n)) return 'Vestuário'
-  if (isDecorativeCategory(n) || n.includes('DECORAC')) return 'DECORAÇÃO'
+  if (isVestuarioCategory(n)) return 'Roupa'
+  if (isDecorativeCategory(n) || n.includes('DECORAC')) return 'Decoração'
   if (n.includes('NATAL')) return 'Natal'
   if (n.includes('MOBILIARIO')) return 'Mobiliário'
   if (n.includes('TEXTEIS')) return 'Têxteis'

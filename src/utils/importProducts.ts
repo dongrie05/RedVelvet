@@ -1,4 +1,3 @@
-import { supabase } from '@/lib/supabase'
 
 export interface ImportProduct {
   codigo: string
@@ -17,62 +16,27 @@ export interface ImportResult {
 }
 
 /**
- * Importa produtos de um array de dados CSV/Excel
- * @param products Array de produtos para importar
- * @returns Resultado da importação
+ * Envia produtos para o servidor (/api/admin/import), que valida a password
+ * de administração (ADMIN_SECRET) e insere com a service role.
  */
-export async function importProducts(products: ImportProduct[]): Promise<ImportResult> {
-  const result: ImportResult = {
-    success: false,
-    imported: 0,
-    errors: [],
-    message: ''
+export async function importProducts(products: ImportProduct[], adminSecret: string): Promise<ImportResult> {
+  const validationErrors = validateImportData(products)
+  if (validationErrors.length > 0) {
+    return { success: false, imported: 0, errors: validationErrors, message: 'Dados inválidos encontrados' }
   }
-
   try {
-    // Validar dados de entrada
-    const validationErrors = validateImportData(products)
-    if (validationErrors.length > 0) {
-      result.errors = validationErrors
-      result.message = 'Dados inválidos encontrados'
-      return result
+    const res = await fetch('/api/admin/import/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+      body: JSON.stringify({ products }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      return { success: false, imported: 0, errors: [data?.error || `Erro ${res.status}`], message: 'Erro na importação' }
     }
-
-    // Preparar dados para inserção
-    const productsToInsert = products.map(product => ({
-      codigo: product.codigo.trim(),
-      referencia: product.referencia.trim(),
-      nome: product.descricao.trim(),
-      descricao: product.descricao.trim(),
-      categoria: product.familia.trim(),
-      preco: product.preco,
-      stock: 0, // Inicialmente NULL, será editado manualmente
-      tamanhos: null, // Inicialmente NULL, será editado manualmente
-      imagem_url: null, // Inicialmente NULL, será editado manualmente
-      iva: product.iva || 23
-    }))
-
-    // Inserir produtos no Supabase
-    const { data, error } = await supabase
-      .from('products')
-      .insert(productsToInsert)
-      .select()
-
-    if (error) {
-      result.errors.push(`Erro ao inserir produtos: ${error.message}`)
-      result.message = 'Erro na importação'
-      return result
-    }
-
-    result.success = true
-    result.imported = data?.length || 0
-    result.message = `${result.imported} produtos importados com sucesso`
-
-    return result
+    return { success: true, imported: data.imported || 0, errors: [], message: `${data.imported || 0} produtos importados com sucesso` }
   } catch (error) {
-    result.errors.push(`Erro inesperado: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
-    result.message = 'Erro na importação'
-    return result
+    return { success: false, imported: 0, errors: [error instanceof Error ? error.message : 'Erro desconhecido'], message: 'Erro na importação' }
   }
 }
 
@@ -81,7 +45,7 @@ export async function importProducts(products: ImportProduct[]): Promise<ImportR
  * @param products Array de produtos para validar
  * @returns Array de erros de validação
  */
-function validateImportData(products: ImportProduct[]): string[] {
+export function validateImportData(products: ImportProduct[]): string[] {
   const errors: string[] = []
 
   if (!products || products.length === 0) {
@@ -187,25 +151,3 @@ export function generateCSVTemplate(): string {
   return [headers.join(','), example.join(',')].join('\n')
 }
 
-/**
- * Verifica se já existem produtos com os códigos fornecidos
- * @param codigos Array de códigos para verificar
- * @returns Array de códigos que já existem
- */
-export async function checkExistingProducts(codigos: string[]): Promise<string[]> {
-  try {
-    const { data, error } = await supabase
-      .from('products')
-      .select('codigo')
-      .in('codigo', codigos)
-
-    if (error) {
-      throw new Error(`Erro ao verificar produtos existentes: ${error.message}`)
-    }
-
-    return data?.map(p => p.codigo) || []
-  } catch (error) {
-    console.error('Erro ao verificar produtos existentes:', error)
-    return []
-  }
-}

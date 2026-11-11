@@ -11,7 +11,6 @@ export const useAuth = () => {
   // Create customer if doesn't exist
   const createCustomerIfNotExists = async (userData: User) => {
     try {
-      console.log('🔍 Checking if customer exists for user:', userData.id)
       
       // Check if customer already exists
       const { data: existingCustomer } = await supabase
@@ -21,12 +20,10 @@ export const useAuth = () => {
         .single()
 
       if (existingCustomer) {
-        console.log('✅ Customer already exists:', existingCustomer.id)
         return
       }
 
       // Create new customer
-      console.log('👤 Creating new customer for user:', userData.id)
       const { data: newCustomer, error } = await supabase
         .from('customers')
         .insert({
@@ -42,7 +39,6 @@ export const useAuth = () => {
       if (error) {
         console.error('❌ Error creating customer:', error)
       } else {
-        console.log('✅ Customer created successfully:', newCustomer.id)
       }
     } catch (error) {
       console.error('❌ Exception creating customer:', error)
@@ -72,8 +68,10 @@ export const useAuth = () => {
     getSession()
 
     // Listen for auth changes
+    // IMPORTANTE: não fazer chamadas ao Supabase com await dentro deste callback —
+    // o cliente fica bloqueado (signIn/updateUser nunca terminam). Adiamos com setTimeout.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (session?.user) {
           const userData = {
             id: session.user.id,
@@ -83,9 +81,7 @@ export const useAuth = () => {
             endereco: session.user.user_metadata?.endereco
           }
           setUser(userData)
-          
-          // Create customer if doesn't exist
-          await createCustomerIfNotExists(userData)
+          if (event === 'SIGNED_IN') setTimeout(() => { createCustomerIfNotExists(userData) }, 0)
         } else {
           setUser(null)
         }
@@ -103,7 +99,8 @@ export const useAuth = () => {
       options: {
         data: {
           nome
-        }
+        },
+        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/login/?confirmed=1` : undefined
       }
     })
     return { data, error }
@@ -123,7 +120,14 @@ export const useAuth = () => {
   }
 
   const resetPassword = async (email: string) => {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email)
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/reset-password/` : undefined
+    })
+    return { data, error }
+  }
+
+  const updatePassword = async (password: string) => {
+    const { data, error } = await supabase.auth.updateUser({ password })
     return { data, error }
   }
 
@@ -145,6 +149,7 @@ export const useAuth = () => {
     signIn,
     signOut,
     resetPassword,
+    updatePassword,
     updateProfile
   }
 }

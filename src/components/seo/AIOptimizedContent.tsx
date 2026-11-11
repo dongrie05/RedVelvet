@@ -34,34 +34,22 @@ export default function AIOptimizedContent({ faqs = [], children }: AIOptimizedC
       <div className="ai-optimized-content">
         {children}
         
-        {/* FAQ Section - Otimizada para AI assistants */}
-        <section className="py-16 bg-gray-50" id="faq">
-          <div className="container-luxury">
-            <div className="text-center mb-12">
-              <h2 className="heading-luxury text-4xl lg:text-5xl mb-6">
-                Perguntas Frequentes
-              </h2>
-              <p className="text-luxury text-xl max-w-3xl mx-auto">
-                Respostas às questões mais comuns sobre os nossos produtos e serviços
-              </p>
-            </div>
-            
-            <div className="max-w-4xl mx-auto">
-              <div className="space-y-8">
-                {allFAQs.map((faq, index) => (
-                  <div 
-                    key={index}
-                    className="bg-white rounded-lg p-8 shadow-sm border border-gray-100"
-                  >
-                    <h3 className="text-xl font-semibold text-redvelvet-900 mb-4">
-                      {faq.question}
-                    </h3>
-                    <p className="text-luxury leading-relaxed">
-                      {faq.answer}
-                    </p>
-                  </div>
-                ))}
-              </div>
+        {/* FAQ (também usado como dados estruturados para Google/assistentes) */}
+        <section className="rv-faq bg-[#f7f3ee] py-[clamp(72px,9vw,120px)]" id="faq">
+          <div className="container-luxury max-w-[760px]">
+            <h2 className="mb-8 font-serif text-[clamp(30px,3.6vw,44px)] font-normal tracking-[-0.02em] text-[#1c1012]">
+              Perguntas frequentes
+            </h2>
+            <div className="border-t border-[#1c1012]/[.12]">
+              {allFAQs.map((faq) => (
+                <details key={faq.question} className="group border-b border-[#1c1012]/[.12]">
+                  <summary className="flex cursor-pointer items-center justify-between gap-6 py-[22px] text-[17px] font-medium text-[#1c1012] lg:text-lg">
+                    {faq.question}
+                    <span data-plus aria-hidden className="text-2xl font-light leading-none text-redvelvet-500">+</span>
+                  </summary>
+                  <p className="pb-[22px] pr-10 text-[15.5px] leading-[1.65] text-[#6b5a5c]">{faq.answer}</p>
+                </details>
+              ))}
             </div>
           </div>
         </section>

@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { ShoppingCart, User, Menu, X, Search } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import { supabase } from '@/lib/supabase'
+import { useCart } from '@/hooks/useCart'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -14,56 +14,26 @@ export default function Header() {
   const [searchTerm, setSearchTerm] = useState('')
   const { user, signOut } = useAuth()
   const router = useRouter()
-  const [itemCount, setItemCount] = useState(0)
+  const { getItemCount } = useCart()
+  const itemCount = getItemCount()
   const [bump, setBump] = useState(false)
 
+  const pathname = usePathname()
+  const [atTop, setAtTop] = useState(true)
   useEffect(() => {
-    let channel: any
-    const fetchCount = async () => {
-      // If not logged in, use localStorage cart
-      if (!user) {
-        try {
-          const raw = localStorage.getItem('redvelvet_cart')
-          if (raw) {
-            const parsed = JSON.parse(raw)
-            const count = (parsed?.items || []).reduce((s: number, it: any) => s + (it.quantidade || 0), 0)
-            setItemCount(count)
-          } else {
-            setItemCount(0)
-          }
-        } catch { setItemCount(0) }
-        return
-      }
-      const { data: customer } = await supabase
-        .from('customers').select('id').eq('user_id', user.id).single()
-      if (!customer) { setItemCount(0); return }
-      const { data: cart } = await supabase
-        .from('carts').select('id').eq('cliente_id', customer.id).single()
-      if (!cart) { setItemCount(0); return }
-      const { data: items } = await supabase
-        .from('cart_items').select('quantidade').eq('cart_id', cart.id)
-      const count = (items || []).reduce((s: number, it: any) => s + (it.quantidade || 0), 0)
-      setItemCount(count)
+    const onScroll = () => setAtTop(window.scrollY < 40)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+  // Na homepage, o header funde-se com o hero cor de veludo até se fazer scroll
+  const tone = pathname === '/' && atTop && !isMenuOpen && !isSearchOpen ? 'dark' : 'light'
 
-      // subscribe realtime
-      if (channel) supabase.removeChannel(channel)
-      channel = supabase
-        .channel(`cart_badge_${cart.id}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'cart_items', filter: `cart_id=eq.${cart.id}` }, fetchCount)
-        .subscribe()
-    }
-    fetchCount()
-    const onAdded = () => {
-      setBump(true); setTimeout(() => setBump(false), 350)
-      // aggressive refresh: immediate + a second check after 500ms
-      fetchCount(); setTimeout(fetchCount, 500)
-    }
+  useEffect(() => {
+    const onAdded = () => { setBump(true); setTimeout(() => setBump(false), 350) }
     window.addEventListener('cart:added', onAdded)
-    // visibility change refresh (tab switch)
-    const onVis = () => { if (document.visibilityState === 'visible') fetchCount() }
-    document.addEventListener('visibilitychange', onVis)
-    return () => { if (channel) supabase.removeChannel(channel); window.removeEventListener('cart:added', onAdded); document.removeEventListener('visibilitychange', onVis) }
-  }, [user])
+    return () => window.removeEventListener('cart:added', onAdded)
+  }, [])
 
   const handleSignOut = async () => {
     await signOut()
@@ -81,7 +51,7 @@ export default function Header() {
   }
 
   return (
-        <header className="bg-white/95 backdrop-blur-md border-b border-redvelvet-200 sticky top-0 z-50">
+        <header data-tone={tone} className="bg-white/95 backdrop-blur-md border-b border-redvelvet-200 sticky top-0 z-50 transition-colors duration-300">
       <div className="container-luxury">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
@@ -118,6 +88,7 @@ export default function Header() {
             {/* Search */}
             <button
               onClick={() => setIsSearchOpen(!isSearchOpen)}
+              aria-label="Pesquisar"
                   className="p-2 text-redvelvet-700 hover:text-redvelvet-500 transition-colors duration-300"
             >
               <Search size={20} />
@@ -150,7 +121,7 @@ export default function Header() {
             )}
 
             {/* Cart */}
-            <Link id="cart-icon" href="/cart" className={`relative p-2 text-redvelvet-700 hover:text-redvelvet-500 transition-colors duration-300 ${bump ? 'scale-110' : ''}`}>
+            <Link id="cart-icon" href="/cart" aria-label={`Carrinho (${itemCount})`} className={`relative p-2 text-redvelvet-700 hover:text-redvelvet-500 transition-colors duration-300 ${bump ? 'scale-110' : ''}`}>
               <ShoppingCart size={20} />
               {itemCount > 0 && (
                 <span id="cart-badge" className={`absolute -top-1 -right-1 bg-redvelvet-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium transition-transform ${bump ? 'scale-110' : ''}`}>
@@ -162,6 +133,7 @@ export default function Header() {
             {/* Mobile menu button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Menu"
                   className="lg:hidden p-2 text-redvelvet-700 hover:text-redvelvet-500 transition-colors duration-300"
             >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}

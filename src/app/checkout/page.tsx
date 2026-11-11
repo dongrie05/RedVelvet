@@ -1,419 +1,281 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, CreditCard, Smartphone, Lock } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Loader2, Lock } from 'lucide-react'
 import { useCart } from '@/hooks/useCart'
 import { useAuth } from '@/hooks/useAuth'
-import { CheckoutForm } from '@/types'
+import { calculateShipping, formatPrice, round2, SHIPPING_COUNTRIES, ShippingCountry } from '@/lib/shop'
+import { Guarantees, PaymentPills } from '@/components/checkout/Trust'
+import type { CartItem } from '@/types'
+
+type Form = {
+  nome: string; email: string; telefone: string; morada: string; cidade: string
+  codigo_postal: string; pais: ShippingCountry; nif: string; notas: string
+}
+type Errors = Partial<Record<keyof Form | 'terms', string>>
+
+function ItemsList({ items }: { items: CartItem[] }) {
+  return (
+    <ul className="space-y-4">
+      {items.map((item) => (
+        <li key={item.id} className="flex items-center gap-3.5">
+          <div className="relative h-[70px] w-14 shrink-0">
+            <div className="relative h-full w-full overflow-hidden rounded-[10px] bg-[#ede6de]">
+              {item.imagem_url && <Image src={item.imagem_url} alt={item.nome} fill sizes="56px" className="object-cover" />}
+            </div>
+            <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#1c1012]/80 px-1 text-[11px] text-white">
+              {item.quantidade}
+            </span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-[#1c1012]">{item.nome}</p>
+            {item.tamanho && <p className="text-[12.5px] text-[#6b5a5c]">Tamanho {item.tamanho}</p>}
+          </div>
+          <p className="text-sm tabular-nums text-[#1c1012]">{formatPrice(item.preco * item.quantidade)}</p>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function Totals({ subtotal, shipping, total, country }: { subtotal: number; shipping: number; total: number; country: ShippingCountry }) {
+  return (
+    <dl className="mt-5 space-y-2.5 border-t border-[#1c1012]/[.1] pt-5 text-[15px] text-[#1c1012]">
+      <div className="flex justify-between"><dt className="text-[#6b5a5c]">Subtotal</dt><dd className="tabular-nums">{formatPrice(subtotal)}</dd></div>
+      <div className="flex justify-between gap-4">
+        <dt className="text-[#6b5a5c]">Envio <span className="text-[13px]">· {SHIPPING_COUNTRIES[country].label}</span></dt>
+        <dd className="tabular-nums">{shipping === 0 ? <span className="text-[#2f7d4f]">Grátis</span> : formatPrice(shipping)}</dd>
+      </div>
+      <div className="mt-3 flex items-baseline justify-between border-t border-[#1c1012]/[.1] pt-4">
+        <dt className="font-medium text-[#1c1012]">Total <span className="text-[12.5px] font-normal text-[#6b5a5c]">IVA incluído</span></dt>
+        <dd className="text-[22px] font-medium tabular-nums text-[#1c1012]">{formatPrice(total)}</dd>
+      </div>
+    </dl>
+  )
+}
 
 export default function CheckoutPage() {
-  const router = useRouter()
-  const { cart, clearCart } = useCart()
+  const { cart } = useCart()
   const { user } = useAuth()
-  const [formData, setFormData] = useState<CheckoutForm>({
-    nome: user?.nome || '',
-    email: user?.email || '',
-    telefone: user?.telefone || '',
-    endereco: user?.endereco || '',
-    cidade: '',
-    codigo_postal: '',
-    pais: 'Portugal',
-    metodo_pagamento: 'card'
+  const [form, setForm] = useState<Form>({
+    nome: '', email: '', telefone: '', morada: '', cidade: '', codigo_postal: '', pais: 'PT', nif: '', notas: '',
   })
+  const [acceptTerms, setAcceptTerms] = useState(false)
+  const [errors, setErrors] = useState<Errors>({})
+  const [serverError, setServerError] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
-  const [errors, setErrors] = useState<Partial<CheckoutForm>>({})
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  useEffect(() => {
+    if (!user) return
+    setForm((f) => ({
+      ...f,
+      nome: f.nome || user.nome || '',
+      email: f.email || user.email || '',
+      telefone: f.telefone || user.telefone || '',
+      morada: f.morada || user.endereco || '',
+    }))
+  }, [user])
+
+  const shipping = calculateShipping(cart.subtotal, form.pais)
+  const total = round2(cart.subtotal + shipping)
+
+  const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-    
-    // Clear error when user starts typing
-    if (errors[name as keyof CheckoutForm]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }))
-    }
+    setForm((f) => ({ ...f, [name]: value }))
+    if (errors[name as keyof Form]) setErrors((er) => ({ ...er, [name]: undefined }))
   }
 
-  const validateForm = (): boolean => {
-    const newErrors: Partial<CheckoutForm> = {}
-
-    if (!formData.nome.trim()) newErrors.nome = 'Nome é obrigatório'
-    if (!formData.email.trim()) newErrors.email = 'Email é obrigatório'
-    if (!formData.telefone.trim()) newErrors.telefone = 'Telefone é obrigatório'
-    if (!formData.endereco.trim()) newErrors.endereco = 'Morada é obrigatória'
-    if (!formData.cidade.trim()) newErrors.cidade = 'Cidade é obrigatória'
-    if (!formData.codigo_postal.trim()) newErrors.codigo_postal = 'Código postal é obrigatório'
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+  const validate = () => {
+    const e: Errors = {}
+    if (!form.nome.trim()) e.nome = 'Indique o seu nome'
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) e.email = 'Email inválido'
+    if (form.telefone.replace(/\D/g, '').length < 9) e.telefone = 'Telemóvel inválido'
+    if (!form.morada.trim()) e.morada = 'Indique a morada'
+    if (!form.cidade.trim()) e.cidade = 'Indique a localidade'
+    if (form.pais.startsWith('PT') ? !/^\d{4}-\d{3}$/.test(form.codigo_postal.trim()) : !form.codigo_postal.trim())
+      e.codigo_postal = form.pais.startsWith('PT') ? 'Formato 1234-567' : 'Indique o código postal'
+    if (form.nif && !/^\d{9}$/.test(form.nif.trim())) e.nif = 'O NIF tem 9 dígitos'
+    if (!acceptTerms) e.terms = 'Aceite os termos para continuar'
+    setErrors(e)
+    const first = Object.keys(e)[0]
+    if (first) document.getElementById(first)?.focus()
+    return !first
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!validateForm()) return
-
+  const handleSubmit = async (ev: React.FormEvent) => {
+    ev.preventDefault()
+    setServerError('')
+    if (!validate()) return
     setIsProcessing(true)
-
     try {
-      // Simular processamento do pagamento
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Simular sucesso do pagamento
-      alert('Pedido realizado com sucesso!')
-      
-      // Limpar carrinho e redirecionar
-      clearCart()
-      router.push('/account/orders')
+      const res = await fetch('/api/checkout/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer: form,
+          items: cart.items.map((i) => ({ produto_id: i.produto_id, quantidade: i.quantidade, tamanho: i.tamanho })),
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data?.url) {
+        window.location.href = data.url
+        return
+      }
+      setServerError(data?.error || 'Não foi possível iniciar o pagamento. Tente novamente.')
     } catch {
-      alert('Erro ao processar o pagamento. Tente novamente.')
-    } finally {
-      setIsProcessing(false)
+      setServerError('Erro de ligação. Verifique a internet e tente novamente.')
     }
-  }
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('pt-PT', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(price)
+    setIsProcessing(false)
   }
 
   if (cart.items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center bg-[#f7f3ee] px-4">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Carrinho vazio
-          </h1>
-          <p className="text-gray-600 mb-8">
-            Adicione produtos ao carrinho antes de finalizar a compra.
-          </p>
-          <Link href="/shop" className="btn-primary">
-            Ir para a Loja
-          </Link>
+          <h1 className="font-serif text-[clamp(32px,4vw,48px)] font-normal text-[#1c1012]">O carrinho está <em className="italic text-[#8a5a60]">vazio.</em></h1>
+          <p className="mt-3 text-[15.5px] text-[#6b5a5c]">Adicione produtos antes de finalizar a compra.</p>
+          <Link href="/shop/" className="mt-8 inline-flex h-12 items-center rounded-full bg-[#210a0f] px-7 text-[15px] font-medium text-[#f7efe9]">Ver a loja</Link>
         </div>
       </div>
     )
   }
 
+  const field = (name: keyof Form, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}, full = false, hint?: string) => (
+    <div className={full ? 'md:col-span-2' : ''}>
+      <label htmlFor={name} className="rv-label">{label}</label>
+      <input
+        id={name}
+        name={name}
+        value={form[name]}
+        onChange={onChange}
+        aria-invalid={!!errors[name]}
+        aria-describedby={errors[name] ? `${name}-err` : undefined}
+        className="rv-input"
+        {...props}
+      />
+      {errors[name] ? (
+        <p id={`${name}-err`} className="mt-1.5 text-[13px] text-redvelvet-600">{errors[name]}</p>
+      ) : hint ? (
+        <p className="mt-1.5 text-[12.5px] text-[#6b5a5c]">{hint}</p>
+      ) : null}
+    </div>
+  )
+
+  const section = 'mt-7 border-t border-[#1c1012]/[.08] pt-7'
+  const h2 = 'mb-5 font-serif text-[22px] font-normal text-[#1c1012]'
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container-custom py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Link
-            href="/cart"
-            className="inline-flex items-center space-x-2 text-primary-600 hover:text-primary-700 mb-4"
-          >
-            <ArrowLeft size={16} />
-            <span>Voltar ao Carrinho</span>
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Finalizar Compra</h1>
+    <div className="bg-[#f7f3ee]">
+      <div className="container-luxury pb-6 pt-[clamp(24px,4vw,48px)]">
+        <Link href="/cart/" className="inline-flex items-center gap-1.5 text-[13px] text-[#6b5a5c] hover:text-[#1c1012]">
+          <ArrowLeft size={14} /> Voltar ao carrinho
+        </Link>
+        <ol className="mt-5 flex items-center gap-2 text-[13px] text-[#6b5a5c]" aria-label="Passos">
+          <li>Carrinho</li><li aria-hidden className="text-[#1c1012]/30">·</li>
+          <li className="font-medium text-[#1c1012]" aria-current="step">Dados de envio</li><li aria-hidden className="text-[#1c1012]/30">·</li>
+          <li>Pagamento</li>
+        </ol>
+        <h1 className="mt-3 font-serif text-[clamp(32px,4vw,52px)] font-normal leading-none tracking-[-0.025em] text-[#1c1012]">
+          Finalizar <em className="italic text-[#8a5a60]">compra.</em>
+        </h1>
+
+        {/* Resumo recolhível (telemóvel) */}
+        <details className="group mt-6 rounded-2xl bg-white px-4 lg:hidden">
+          <summary className="flex h-14 cursor-pointer list-none items-center justify-between text-sm text-[#1c1012] [&::-webkit-details-marker]:hidden">
+            <span className="flex items-center gap-1.5">
+              Ver resumo da encomenda <ChevronDown size={16} className="transition-transform duration-200 group-open:rotate-180" />
+            </span>
+            <span className="text-[15px] font-medium tabular-nums">{formatPrice(total)}</span>
+          </summary>
+          <div className="pb-5 pt-1">
+            <ItemsList items={cart.items} />
+            <Totals subtotal={cart.subtotal} shipping={shipping} total={total} country={form.pais} />
+          </div>
+        </details>
+      </div>
+
+      <form onSubmit={handleSubmit} noValidate className="container-luxury grid grid-cols-1 gap-8 pb-24 lg:grid-cols-12 lg:gap-12">
+        <div className="rounded-[24px] bg-white p-6 md:p-9 lg:col-span-7">
+          <h2 className={h2}>Contacto</h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {field('nome', 'Nome completo', { autoComplete: 'name' }, true)}
+            {field('email', 'Email', { type: 'email', autoComplete: 'email', inputMode: 'email', placeholder: 'nome@email.com' }, false, 'Enviamos aqui a confirmação.')}
+            {field('telefone', 'Telemóvel', { type: 'tel', autoComplete: 'tel', placeholder: '912 345 678' }, false, 'Só para contacto sobre a entrega.')}
+          </div>
+
+          <div className={section}>
+            <h2 className={h2}>Morada de envio</h2>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label htmlFor="pais" className="rv-label">País / região</label>
+                <select id="pais" name="pais" value={form.pais} onChange={onChange} className="rv-input" autoComplete="country">
+                  {Object.entries(SHIPPING_COUNTRIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select>
+              </div>
+              {field('morada', 'Morada', { autoComplete: 'street-address', placeholder: 'Rua, número, andar' }, true)}
+              {field('codigo_postal', 'Código postal', { autoComplete: 'postal-code', placeholder: '1000-000', inputMode: 'numeric' })}
+              {field('cidade', 'Localidade', { autoComplete: 'address-level2' })}
+              {field('nif', 'NIF (opcional)', { inputMode: 'numeric', maxLength: 9 }, false, 'Para fatura com contribuinte.')}
+              <div className="md:col-span-2">
+                <label htmlFor="notas" className="rv-label">Notas (opcional)</label>
+                <textarea id="notas" name="notas" value={form.notas} onChange={onChange} rows={3} maxLength={500} className="rv-input" placeholder="Ex.: embrulho para oferta, horário de entrega" />
+              </div>
+            </div>
+          </div>
+
+          <div className={section}>
+            <h2 className={h2}>Pagamento</h2>
+            <p className="text-[14.5px] leading-relaxed text-[#6b5a5c]">
+              No passo seguinte paga na página segura da Mollie. Não guardamos os dados do seu cartão.
+            </p>
+            <PaymentPills className="mt-3.5" />
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Checkout Form */}
-          <div className="space-y-8">
-            {/* Billing Information */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                Informações de Faturação
-              </h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nome Completo *
-                  </label>
-                  <input
-                    type="text"
-                    name="nome"
-                    value={formData.nome}
-                    onChange={handleInputChange}
-                    className={`input-field ${errors.nome ? 'border-red-500' : ''}`}
-                    placeholder="O seu nome completo"
-                  />
-                  {errors.nome && (
-                    <p className="text-red-500 text-sm mt-1">{errors.nome}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className={`input-field ${errors.email ? 'border-red-500' : ''}`}
-                    placeholder="seu@email.com"
-                  />
-                  {errors.email && (
-                    <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Telefone *
-                  </label>
-                  <input
-                    type="tel"
-                    name="telefone"
-                    value={formData.telefone}
-                    onChange={handleInputChange}
-                    className={`input-field ${errors.telefone ? 'border-red-500' : ''}`}
-                    placeholder="+351 XXX XXX XXX"
-                  />
-                  {errors.telefone && (
-                    <p className="text-red-500 text-sm mt-1">{errors.telefone}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    País
-                  </label>
-                  <select
-                    name="pais"
-                    value={formData.pais}
-                    onChange={handleInputChange}
-                    className="input-field"
-                  >
-                    <option value="Portugal">Portugal</option>
-                    <option value="Espanha">Espanha</option>
-                    <option value="França">França</option>
-                  </select>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Morada *
-                  </label>
-                  <input
-                    type="text"
-                    name="endereco"
-                    value={formData.endereco}
-                    onChange={handleInputChange}
-                    className={`input-field ${errors.endereco ? 'border-red-500' : ''}`}
-                    placeholder="Rua, número, andar"
-                  />
-                  {errors.endereco && (
-                    <p className="text-red-500 text-sm mt-1">{errors.endereco}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Cidade *
-                  </label>
-                  <input
-                    type="text"
-                    name="cidade"
-                    value={formData.cidade}
-                    onChange={handleInputChange}
-                    className={`input-field ${errors.cidade ? 'border-red-500' : ''}`}
-                    placeholder="Lisboa"
-                  />
-                  {errors.cidade && (
-                    <p className="text-red-500 text-sm mt-1">{errors.cidade}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Código Postal *
-                  </label>
-                  <input
-                    type="text"
-                    name="codigo_postal"
-                    value={formData.codigo_postal}
-                    onChange={handleInputChange}
-                    className={`input-field ${errors.codigo_postal ? 'border-red-500' : ''}`}
-                    placeholder="1000-000"
-                  />
-                  {errors.codigo_postal && (
-                    <p className="text-red-500 text-sm mt-1">{errors.codigo_postal}</p>
-                  )}
-                </div>
-              </div>
+        <aside className="lg:col-span-5">
+          <div className="rounded-[24px] bg-white p-6 md:p-7 lg:sticky lg:top-[104px]">
+            <h2 className="mb-5 hidden font-serif text-2xl font-normal text-[#1c1012] lg:block">Resumo</h2>
+            <div className="hidden lg:block"><ItemsList items={cart.items} /></div>
+            <div className="lg:block [&>dl]:mt-0 [&>dl]:border-t-0 [&>dl]:pt-0 lg:[&>dl]:mt-5 lg:[&>dl]:border-t lg:[&>dl]:pt-5">
+              <Totals subtotal={cart.subtotal} shipping={shipping} total={total} country={form.pais} />
             </div>
 
-            {/* Payment Method */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                Método de Pagamento
-              </h2>
+            <label className="mt-6 flex items-start gap-3 text-sm leading-relaxed text-[#1c1012]/85">
+              <input
+                id="terms"
+                type="checkbox"
+                checked={acceptTerms}
+                onChange={(e) => { setAcceptTerms(e.target.checked); setErrors((er) => ({ ...er, terms: undefined })) }}
+                className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded border-[#1c1012]/30 text-redvelvet-500 focus:ring-redvelvet-500/30"
+              />
+              <span>
+                Li e aceito os <Link href="/terms/" target="_blank" className="underline underline-offset-2">Termos e Condições</Link> e a{' '}
+                <Link href="/privacy/" target="_blank" className="underline underline-offset-2">Política de Privacidade</Link>.
+              </span>
+            </label>
+            {errors.terms && <p className="mt-1.5 text-[13px] text-redvelvet-600">{errors.terms}</p>}
 
-              <div className="space-y-4">
-                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="metodo_pagamento"
-                    value="card"
-                    checked={formData.metodo_pagamento === 'card'}
-                    onChange={handleInputChange}
-                    className="mr-3"
-                  />
-                  <CreditCard size={20} className="mr-3 text-gray-600" />
-                  <div>
-                    <div className="font-medium">Cartão de Crédito/Débito</div>
-                    <div className="text-sm text-gray-600">Visa, Mastercard, American Express</div>
-                  </div>
-                </label>
+            {serverError && (
+              <div role="alert" className="mt-4 rounded-xl border border-[#f5c2c9] bg-[#fdecee] p-3.5 text-sm text-[#8a1c2b]">{serverError}</div>
+            )}
 
-                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="metodo_pagamento"
-                    value="mbway"
-                    checked={formData.metodo_pagamento === 'mbway'}
-                    onChange={handleInputChange}
-                    className="mr-3"
-                  />
-                  <Smartphone size={20} className="mr-3 text-gray-600" />
-                  <div>
-                    <div className="font-medium">MB Way</div>
-                    <div className="text-sm text-gray-600">Pagamento rápido e seguro</div>
-                  </div>
-                </label>
-
-                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="metodo_pagamento"
-                    value="apple_pay"
-                    checked={formData.metodo_pagamento === 'apple_pay'}
-                    onChange={handleInputChange}
-                    className="mr-3"
-                  />
-                  <div className="mr-3 text-gray-600">🍎</div>
-                  <div>
-                    <div className="font-medium">Apple Pay</div>
-                    <div className="text-sm text-gray-600">Pagamento com Touch ID ou Face ID</div>
-                  </div>
-                </label>
-
-                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="metodo_pagamento"
-                    value="google_pay"
-                    checked={formData.metodo_pagamento === 'google_pay'}
-                    onChange={handleInputChange}
-                    className="mr-3"
-                  />
-                  <div className="mr-3 text-gray-600">📱</div>
-                  <div>
-                    <div className="font-medium">Google Pay</div>
-                    <div className="text-sm text-gray-600">Pagamento rápido e seguro</div>
-                  </div>
-                </label>
-              </div>
-            </div>
+            <button
+              type="submit"
+              disabled={isProcessing}
+              className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-redvelvet-500 text-[15px] font-medium text-white transition-colors hover:bg-[#a3172f] disabled:cursor-wait disabled:opacity-70"
+            >
+              {isProcessing ? (
+                <><Loader2 size={16} className="animate-spin" /> A abrir pagamento seguro…</>
+              ) : (
+                <><Lock size={16} /> Encomendar e pagar {formatPrice(total)}</>
+              )}
+            </button>
+            <Guarantees />
           </div>
-
-          {/* Order Summary */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                Resumo do Pedido
-              </h2>
-
-              {/* Order Items */}
-              <div className="space-y-4 mb-6">
-                {cart.items.map((item) => (
-                  <div key={item.id} className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                      {item.imagem_url ? (
-                        <Image
-                          src={item.imagem_url}
-                          alt={item.nome}
-                          width={48}
-                          height={48}
-                          className="object-cover w-full h-full"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="text-xs text-gray-400">Img</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {item.nome}
-                      </p>
-                      {item.tamanho && (
-                        <p className="text-xs text-gray-600">Tamanho: {item.tamanho}</p>
-                      )}
-                      <p className="text-xs text-gray-600">Qtd: {item.quantidade}</p>
-                    </div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {formatPrice(item.preco * item.quantidade)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Order Totals */}
-              <div className="space-y-3 border-t border-gray-200 pt-4">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">{formatPrice(cart.subtotal)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Portes de Envio</span>
-                  <span className="font-medium">
-                    {cart.shipping === 0 ? (
-                      <span className="text-green-600">Grátis</span>
-                    ) : (
-                      formatPrice(cart.shipping)
-                    )}
-                  </span>
-                </div>
-                <div className="flex justify-between text-lg font-semibold border-t border-gray-200 pt-3">
-                  <span>Total</span>
-                  <span className="text-primary-600">{formatPrice(cart.total)}</span>
-                </div>
-              </div>
-
-              {/* Security Info */}
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
-                  <Lock size={16} className="text-green-600" />
-                  <span>Pagamento 100% seguro</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
-                  <Lock size={16} className="text-green-600" />
-                  <span>Dados protegidos com SSL</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <Lock size={16} className="text-green-600" />
-                  <span>Devoluções gratuitas</span>
-                </div>
-              </div>
-
-              {/* Place Order Button */}
-              <button
-                type="submit"
-                disabled={isProcessing}
-                className={`w-full mt-6 py-3 px-6 rounded-lg font-medium transition-colors ${
-                  isProcessing
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-primary-600 hover:bg-primary-700 text-white'
-                }`}
-              >
-                {isProcessing ? 'A processar...' : `Efetuar Pedido - ${formatPrice(cart.total)}`}
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
+        </aside>
+      </form>
     </div>
   )
 }

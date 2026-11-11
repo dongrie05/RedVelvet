@@ -1,390 +1,146 @@
-'use client'
-
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Star, Heart, Sparkles } from 'lucide-react'
+import Image from 'next/image'
+import { ArrowRight } from 'lucide-react'
+import CategoryTiles from '@/components/home/CategoryTiles'
+import VisitSection from '@/components/home/VisitSection'
 import ProductCard from '@/components/product/ProductCard'
-import CategoryImage from '@/components/ui/CategoryImage'
-import AIOptimizedContent, { AIFriendlyContent, DirectAnswer } from '@/components/seo/AIOptimizedContent'
-import { Product } from '@/lib/supabase'
-import type { CategoryCounts } from '@/app/api/category-counts/route'
+import AIOptimizedContent from '@/components/seo/AIOptimizedContent'
+import { getAllProducts } from '@/lib/products'
+import { getCategorySlug } from '@/lib/categoryUtils'
+import { BUSINESS } from '@/lib/business'
+import { FREE_SHIPPING_THRESHOLD } from '@/lib/shop'
+import type { Product } from '@/lib/supabase'
 
-const FEATURED_CODIGOS = ['AMY-GA037', '34SI22362', 'TLGASP'] as const
+export const revalidate = 300
 
-const categories = [
-  {
-    name: 'Elementos Decorativos',
-    slug: 'decorative-elements' as const,
-    description: 'Elementos únicos para decorar o seu espaço',
-    imageCategory: 'decorative-elements' as const
-  },
-  {
-    name: 'Velas',
-    slug: 'velas' as const,
-    description: 'Velas aromáticas e decorativas',
-    imageCategory: 'candles' as const
-  },
-  {
-    name: 'Roupa',
-    slug: 'roupa' as const,
-    description: 'Peças elegantes e exclusivas',
-    imageCategory: 'clothing' as const
-  }
-]
+const FEATURED_CODIGOS = ['AMY-GA037', '34SI22362', 'TLGASP']
 
-export default function Home() {
-  const [categoryCounts, setCategoryCounts] = useState<CategoryCounts | null>(null)
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
 
-  useEffect(() => {
-    fetch('/api/category-counts', { cache: 'no-store' })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.counts) setCategoryCounts(data.counts)
-      })
-      .catch(() => {})
-  }, [])
+function pickFeatured(products: Product[]): Product[] {
+  const byCode = FEATURED_CODIGOS.map((c) => products.find((p) => p.codigo === c)).filter(Boolean) as Product[]
+  const rest = products.filter((p) => !byCode.includes(p) && p.stock > 0 && p.imagem_url)
+  return [...byCode, ...rest].slice(0, 3)
+}
 
-  useEffect(() => {
-    fetch('/api/products', { cache: 'no-store' })
-      .then((res) => res.json())
-      .then((data) => {
-        const list = (data?.data || []) as Product[]
-        const normalized = list.map((p: Product) => ({
-          ...p,
-          preco: typeof p.preco === 'string' ? Number(p.preco) : p.preco,
-          iva: typeof p.iva === 'string' ? Number(p.iva) : p.iva
-        })) as Product[]
-        const byCodigo = normalized.filter(p => FEATURED_CODIGOS.includes(p.codigo as typeof FEATURED_CODIGOS[number]))
-        const ordered = FEATURED_CODIGOS.map(cod => byCodigo.find(p => p.codigo === cod)).filter(Boolean) as Product[]
-        setFeaturedProducts(ordered)
-      })
-      .catch(() => setFeaturedProducts([]))
-  }, [])
+
+export default async function Home() {
+  const products = await getAllProducts().catch(() => [] as Product[])
+  const featured = pickFeatured(products)
+  const counts: Record<string, number> = {}
+  products.forEach((p) => {
+    const slug = getCategorySlug(p.categoria)
+    if (slug) counts[slug] = (counts[slug] || 0) + 1
+  })
 
   return (
     <AIOptimizedContent>
-      <div>
-      {/* Hero Section */}
-      <section className="relative py-12 lg:py-16 xl:py-20 flex items-center overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-cream-50 via-white to-cream-100"></div>
-        
-        {/* Decorative Elements */}
-        <div className="absolute top-20 left-20 w-32 h-32 border border-redvelvet-300/30 rotate-45 animate-float"></div>
-        <div className="absolute bottom-20 right-20 w-24 h-24 border border-redvelvet-300/20 rotate-12 animate-float" style={{animationDelay: '1s'}}></div>
-        <div className="absolute top-1/2 left-10 w-16 h-16 border border-redvelvet-300/25 rotate-45 animate-float" style={{animationDelay: '2s'}}></div>
-        
-        <div className="container-luxury relative z-10 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-            <div className="space-y-8 animate-fade-in-up">
-              <div className="space-y-4">
-                <div className="flex items-center space-x-4">
-                  <div className="w-16 h-px bg-redvelvet-500"></div>
-                  <span className="text-redvelvet-500 font-medium tracking-widest text-sm uppercase">RedVelvet</span>
-                </div>
-                <h1 className="heading-luxury text-5xl lg:text-7xl xl:text-8xl leading-none">
-                  Elegância
-                  <br />
-                  <span className="text-redvelvet-500">Refinada</span>
-                </h1>
-              </div>
-              
-              <p className="text-luxury text-xl lg:text-2xl leading-relaxed max-w-2xl">
-                Descubra uma curadoria exclusiva de peças únicas que transformam espaços 
-                em ambientes sofisticados e memoráveis.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-6 pt-4">
-                <Link
-                  href="/shop"
-                  className="btn-primary group flex items-center justify-center space-x-3"
-                >
-                  <span>Explorar Coleção</span>
-                  <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform duration-300" />
-                </Link>
-                <Link
-                  href="/about"
-                  className="btn-secondary"
-                >
-                  Nossa História
-                </Link>
-              </div>
-            </div>
-            
-            <div className="relative animate-fade-in-up-delay w-full">
-              <div className="relative w-full overflow-hidden rounded-lg shadow-luxury">
-                {/* Hero Image: proporção 1:1 (quadrado) */}
-                <CategoryImage 
-                  category="hero" 
-                  priority={true}
-                  className="aspect-square w-full max-w-2xl mx-auto rounded-lg"
-                />
-                
-                {/* Floating Elements */}
-                <div className="absolute -top-8 -right-8 w-24 h-24 bg-redvelvet-500/10 border border-redvelvet-300/30 rotate-12 animate-float"></div>
-                <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-primary-200/20 border border-primary-300/30 rotate-45 animate-float" style={{animationDelay: '1.5s'}}></div>
-              </div>
-            </div>
-          </div>
+      {/* ---------------- HERO ---------------- */}
+      <section className="relative overflow-hidden bg-[#210a0f] text-[#f7efe9] min-h-[620px] h-[calc(100dvh-80px)] lg:max-h-[880px]">
+        <div className="absolute inset-x-0 top-0 h-[60%] lg:inset-y-0 lg:left-auto lg:right-0 lg:h-auto lg:w-[62%] rv-settle">
+          <Image
+            src="/images/categories/hero/hero-main.png"
+            alt="Mulher com casaco vermelho RedVelvet"
+            fill
+            priority
+            sizes="(max-width: 1024px) 100vw, 62vw"
+            className="object-cover object-[50%_15%] lg:object-[50%_20%]"
+          />
         </div>
-      </section>
+        {/* Fusão da foto com o fundo veludo */}
+        <div aria-hidden className="absolute inset-0 z-[1] lg:hidden bg-[linear-gradient(0deg,#210a0f_46%,rgba(33,10,15,.8)_58%,rgba(33,10,15,0)_74%)]" />
+        <div aria-hidden className="absolute inset-0 z-[1] hidden lg:block bg-[linear-gradient(90deg,#210a0f_38%,rgba(33,10,15,.92)_50%,rgba(33,10,15,0)_72%)]" />
+        <div aria-hidden className="absolute inset-0 z-[1] hidden lg:block bg-[linear-gradient(0deg,#210a0f_0%,rgba(33,10,15,0)_22%)]" />
+        <div aria-hidden className="rv-grain absolute inset-0 z-[2]" />
 
-      {/* Featured Categories */}
-      <section className="section-spacing bg-white">
-        <div className="container-luxury">
-          <div className="text-center mb-20 animate-fade-in-up">
-            <div className="flex items-center justify-center space-x-4 mb-6">
-              <div className="w-12 h-px bg-redvelvet-500"></div>
-              <span className="text-redvelvet-500 font-medium tracking-widest text-sm uppercase">Coleções</span>
-              <div className="w-12 h-px bg-redvelvet-500"></div>
-            </div>
-            <h2 className="heading-luxury text-4xl lg:text-5xl mb-6">
-              Categorias Exclusivas
-            </h2>
-            <p className="text-luxury text-xl max-w-3xl mx-auto">
-              Cada categoria representa uma curadoria cuidadosa de peças selecionadas 
-              para criar ambientes únicos e sofisticados.
+        <div className="container-luxury relative z-10 flex h-full flex-col justify-end pb-7 lg:justify-center lg:pb-28">
+          <div className="max-w-[600px]">
+            <p className="rv-rise flex items-center gap-3.5 text-xs font-medium uppercase tracking-[0.28em] text-[#f7efe9]/60" style={{ animationDelay: '.1s' }}>
+              <span aria-hidden className="h-px w-8 bg-[#f7efe9]/40" />
+              Lisboa · Casa &amp; Moda
             </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            {categories.map((category, index) => (
+            <h1 className="mt-4 font-serif lg:mt-5 text-[clamp(46px,7vw,104px)] font-normal leading-[0.95] tracking-[-0.03em] text-[#f7efe9]">
+              <span className="rv-line"><span style={{ animationDelay: '.2s' }}>Para a casa,</span></span>
+              <span className="rv-line"><span className="italic text-[#e9a8ae]" style={{ animationDelay: '.32s' }}>e para si.</span></span>
+            </h1>
+            <p className="rv-rise mt-5 max-w-[30rem] text-[15.5px] lg:mt-7 leading-relaxed text-[#f7efe9]/72 lg:text-[17px]" style={{ animationDelay: '.5s' }}>
+              Decoração, velas aromáticas e roupa escolhidas a dedo na nossa loja de Lisboa.
+              Pague com MB WAY e receba em casa em {BUSINESS.shippingDays}.
+            </p>
+            <div className="rv-rise mt-7 flex flex-col gap-5 lg:mt-9 sm:flex-row sm:items-center sm:gap-8" style={{ animationDelay: '.62s' }}>
               <Link
-                key={category.slug}
-                href={`/shop?category=${category.slug}`}
-                className="group animate-fade-in-up"
-                style={{animationDelay: `${index * 0.1}s`}}
+                href="/shop"
+                className="group inline-flex min-h-[52px] items-center justify-between gap-3.5 rounded-full bg-[#f7efe9] py-1.5 pl-[26px] pr-1.5 text-[15px] font-medium text-[#210a0f] transition-transform active:scale-[.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#f7efe9]"
               >
-                <div className="card-luxury hover-lift">
-                  <div className="aspect-[4/3] relative overflow-hidden">
-                    <CategoryImage 
-                      category={category.imageCategory}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-transparent"></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center space-y-4 text-white">
-                        <div className="w-20 h-20 bg-white/10 backdrop-blur-sm border border-white/30 rounded-full flex items-center justify-center mx-auto group-hover:bg-white/20 transition-colors duration-300">
-                          <Heart size={32} className="text-white group-hover:text-gold-200 transition-colors duration-300" />
-                        </div>
-                        <div className="space-y-2">
-                          <h3 className="heading-luxury text-2xl group-hover:text-gold-200 transition-colors duration-300">
-                            {category.name}
-                          </h3>
-                          <div className="w-16 h-px bg-white mx-auto group-hover:w-24 transition-all duration-300"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-8">
-                    <p className="text-luxury mb-6 leading-relaxed">
-                      {category.description}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-redvelvet-500 font-medium tracking-wider uppercase">
-                        {categoryCounts ? categoryCounts[category.slug] : 0} peças exclusivas
-                      </span>
-                      <ArrowRight size={20} className="text-redvelvet-500 group-hover:translate-x-2 transition-transform duration-300" />
-                    </div>
-                  </div>
-                </div>
+                Ver a loja
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-redvelvet-500 text-white transition-transform duration-300 group-hover:translate-x-[3px]">
+                  <ArrowRight size={18} />
+                </span>
               </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Products */}
-      <section className="section-spacing gradient-luxury">
-        <div className="container-luxury">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-20">
-            <div className="mb-8 lg:mb-0 animate-fade-in-up">
-              <div className="flex items-center space-x-4 mb-6">
-                <div className="w-12 h-px bg-redvelvet-500"></div>
-                <span className="text-redvelvet-500 font-medium tracking-widest text-sm uppercase">Destaques</span>
-              </div>
-              <h2 className="heading-luxury text-4xl lg:text-5xl mb-6">
-                Peças Selecionadas
-              </h2>
-              <p className="text-luxury text-xl max-w-2xl">
-                Uma curadoria especial de produtos únicos que definem o nosso padrão 
-                de excelência e sofisticação.
-              </p>
+              <a href="#visite" className="rv-link self-start text-[15px] text-[#f7efe9]/85 hover:text-[#f7efe9] sm:self-auto">
+                Visite-nos em Lisboa
+              </a>
             </div>
-            <Link
-              href="/shop"
-              className="btn-secondary group flex items-center space-x-3 animate-fade-in-up-delay"
-            >
-              <span>Ver Coleção Completa</span>
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform duration-300" />
-            </Link>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredProducts.length > 0 ? featuredProducts.map((product, index) => (
-              <div 
-                key={product.id} 
-                className="animate-fade-in-up"
-                style={{animationDelay: `${index * 0.1}s`}}
-              >
-                <ProductCard product={product} />
-              </div>
-            )) : (
-              <div className="col-span-full py-8 text-center text-redvelvet-600">A carregar destaques...</div>
-            )}
-          </div>
-        </div>
-      </section>
 
-      {/* Testimonials Preview - Comentado temporariamente */}
-      {/* <section className="section-spacing bg-white">
-        <div className="container-luxury">
-          <div className="text-center mb-20 animate-fade-in-up">
-            <div className="flex items-center justify-center space-x-4 mb-6">
-              <div className="w-12 h-px bg-redvelvet-500"></div>
-              <span className="text-redvelvet-500 font-medium tracking-widest text-sm uppercase">Testemunhos</span>
-              <div className="w-12 h-px bg-redvelvet-500"></div>
-            </div>
-            <h2 className="heading-luxury text-4xl lg:text-5xl mb-6">
-              Experiências Autênticas
-            </h2>
-            <p className="text-luxury text-xl max-w-3xl mx-auto">
-              Histórias reais de clientes que transformaram os seus espaços 
-              com as nossas peças exclusivas.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            {[1, 2, 3].map((_, index) => (
-              <div 
-                key={index}
-                className="card-luxury p-8 animate-fade-in-up"
-                style={{animationDelay: `${index * 0.1}s`}}
-              >
-                <div className="flex items-center mb-6">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={20} className="text-redvelvet-500 fill-current" />
-                  ))}
-                </div>
-                <blockquote className="text-luxury text-lg leading-relaxed mb-8 italic">
-                  &ldquo;A qualidade excepcional e o design refinado superaram todas as minhas expectativas. 
-                  Cada peça conta uma história única.&rdquo;
-                </blockquote>
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-gold-200 to-gold-300 rounded-full mr-4 flex items-center justify-center">
-                    <span className="text-gold-700 font-semibold text-sm">CS</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-redvelvet-900">Cliente Satisfeito</p>
-                    <p className="text-sm text-redvelvet-600">Lisboa, Portugal</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          <div className="text-center mt-16 animate-fade-in-up-delay-2">
-            <Link
-              href="/testimonials"
-              className="btn-secondary group flex items-center justify-center space-x-3 mx-auto w-fit"
-            >
-              <span>Ver Todos os Testemunhos</span>
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform duration-300" />
-            </Link>
-          </div>
-        </div>
-      </section> */}
-
-      {/* Newsletter */}
-      <section className="py-16 bg-gray-900 text-white">
-        <div className="container-custom text-center">
-          <h2 className="text-3xl font-bold mb-4">
-            Mantenha-se Atualizado
-          </h2>
-          <p className="text-lg text-gray-300 mb-8">
-            Receba as nossas novidades e ofertas especiais
+          <p className="rv-rise mt-7 text-[12px] text-[#f7efe9]/55 sm:hidden" style={{ animationDelay: '.8s' }}>
+            Envio grátis desde {FREE_SHIPPING_THRESHOLD} € · MB WAY · 14 dias para devolver
           </p>
-          <div className="max-w-md mx-auto flex gap-4">
-            <input
-              type="email"
-              placeholder="O seu email"
-              className="flex-1 px-4 py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-            <button className="btn-primary px-6">
-              Subscrever
-            </button>
-          </div>
+          <ul className="rv-rise mt-8 hidden flex-col gap-1.5 text-[12.5px] text-[#f7efe9]/55 sm:flex lg:absolute lg:bottom-9 lg:mt-0 lg:flex-row lg:items-center lg:gap-0" style={{ animationDelay: '.8s' }}>
+            <li>Envio grátis desde {FREE_SHIPPING_THRESHOLD} €</li>
+            <li aria-hidden className="mx-[18px] hidden h-3.5 w-px bg-[#f7efe9]/15 lg:block" />
+            <li>MB WAY, Multibanco e cartão</li>
+            <li aria-hidden className="mx-[18px] hidden h-3.5 w-px bg-[#f7efe9]/15 lg:block" />
+            <li>14 dias para devolver</li>
+          </ul>
         </div>
       </section>
-      
-      {/* Conteúdo otimizado para AI - Informações sobre a empresa */}
-      <section className="py-16 bg-white">
+
+      {/* ---------------- COLEÇÕES ---------------- */}
+      <section className="bg-[#f7f3ee] py-[clamp(80px,10vw,144px)]">
         <div className="container-luxury">
-          <AIFriendlyContent
-            title="Sobre a RedVelvet"
-            description="A RedVelvet é uma loja online portuguesa especializada em produtos únicos de decoração, velas aromáticas artesanais e roupa elegante. Fundada em 2024, oferecemos uma curadoria cuidadosa de peças selecionadas para criar ambientes sofisticados e memoráveis."
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              <div>
-                <h2 className="text-2xl font-semibold text-redvelvet-900 mb-6">
-                  A Nossa Missão
-                </h2>
-                <p className="text-luxury leading-relaxed mb-6">
-                  Transformar espaços através de produtos únicos e elegantes. Cada peça é cuidadosamente selecionada 
-                  pela sua qualidade premium e design refinado, criando ambientes que refletem personalidade e sofisticação.
-                </p>
-                <p className="text-luxury leading-relaxed">
-                  Acreditamos que a decoração é uma forma de arte que deve ser acessível a todos, 
-                  por isso oferecemos produtos exclusivos a preços justos.
-                </p>
-              </div>
-              
-              <div>
-                <h2 className="text-2xl font-semibold text-redvelvet-900 mb-6">
-                  Porquê Escolher-nos?
-                </h2>
-                <ul className="space-y-4">
-                  <li className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-redvelvet-500 rounded-full mt-2"></div>
-                    <span className="text-luxury">Produtos únicos e exclusivos</span>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-redvelvet-500 rounded-full mt-2"></div>
-                    <span className="text-luxury">Qualidade premium garantida</span>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-redvelvet-500 rounded-full mt-2"></div>
-                    <span className="text-luxury">Envio rápido para todo o Portugal</span>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-redvelvet-500 rounded-full mt-2"></div>
-                    <span className="text-luxury">Apoio ao cliente personalizado</span>
-                  </li>
-                </ul>
-              </div>
+          <div className="mb-12 flex items-end justify-between gap-6">
+            <div>
+              <p className="flex items-center gap-2.5 text-xs font-medium uppercase tracking-[0.28em] text-redvelvet-500">
+                <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-redvelvet-500" /> Coleções
+              </p>
+              <h2 className="mt-4 font-serif text-[clamp(34px,4.4vw,60px)] font-normal leading-[1.02] tracking-[-0.025em] text-[#1c1012]">
+                Escolha por onde <em className="italic text-[#8a5a60]">começar.</em>
+              </h2>
             </div>
-          </AIFriendlyContent>
+            <Link href="/shop" className="rv-link hidden shrink-0 items-center gap-2 text-sm text-[#1c1012] sm:inline-flex">
+              Ver tudo <ArrowRight size={16} />
+            </Link>
+          </div>
+
+          <CategoryTiles counts={counts} />
         </div>
       </section>
-      
-      {/* Respostas diretas para AI assistants */}
-      <section className="py-16 bg-gray-50">
-        <div className="container-luxury">
-          <DirectAnswer
-            question="Onde posso comprar produtos de decoração únicos em Portugal?"
-            answer="A RedVelvet é uma loja online portuguesa especializada em produtos únicos de decoração, velas aromáticas artesanais e roupa elegante. Oferecemos uma curadoria cuidadosa de peças selecionadas para criar ambientes sofisticados e memoráveis, com envio para todo o território português."
-            source="RedVelvet - Loja Online Oficial"
-          />
-          
-          <DirectAnswer
-            question="Que tipos de velas aromáticas vendem?"
-            answer="Vendemos velas aromáticas artesanais feitas à mão com cera de soja natural e óleos essenciais de qualidade premium. Cada vela é única e cuidadosamente elaborada, disponível em diversos aromas como lavanda, baunilha, eucalipto e outros fragrâncias relaxantes."
-            source="RedVelvet - Velas Artesanais"
-          />
-        </div>
-      </section>
-    </div>
+
+      {/* ---------------- EM DESTAQUE ---------------- */}
+      {featured.length > 0 && (
+        <section className="bg-white py-[clamp(80px,10vw,128px)]">
+          <div className="container-luxury">
+            <div className="mb-12 flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
+              <div>
+                <p className="flex items-center gap-2.5 text-xs font-medium uppercase tracking-[0.28em] text-redvelvet-500">
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-redvelvet-500" /> Em destaque
+                </p>
+                <h2 className="mt-4 font-serif text-[clamp(34px,4.4vw,60px)] font-normal leading-[1.02] tracking-[-0.025em] text-[#1c1012]">
+                  Escolhidas <em className="italic text-[#8a5a60]">para esta estação.</em>
+                </h2>
+              </div>
+              <Link href="/shop" className="btn-secondary inline-flex items-center gap-2">
+                Ver coleção completa <ArrowRight size={16} />
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-7 md:gap-x-5 md:gap-y-10 lg:grid-cols-3">
+              {featured.map((p) => <ProductCard key={p.id} product={p} />)}
+            </div>
+          </div>
+        </section>
+      )}
+
+      <VisitSection />
     </AIOptimizedContent>
   )
 }

@@ -9,6 +9,7 @@ export default function ImportProductsPage() {
   const [isImporting, setIsImporting] = useState(false)
   const [result, setResult] = useState<ImportResult | null>(null)
   const [dragActive, setDragActive] = useState(false)
+  const [adminSecret, setAdminSecret] = useState('')
 
   const handleFileUpload = (file: File) => {
     if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
@@ -46,6 +47,10 @@ export default function ImportProductsPage() {
   }
 
   const handleImport = async () => {
+    if (!adminSecret.trim()) {
+      alert('Introduza a password de administração')
+      return
+    }
     if (!csvData.trim()) {
       alert('Por favor, carregue um ficheiro CSV primeiro')
       return
@@ -56,7 +61,7 @@ export default function ImportProductsPage() {
 
     try {
       const products = parseCSVData(csvData)
-      const importResult = await importProducts(products)
+      const importResult = await importProducts(products, adminSecret)
       setResult(importResult)
     } catch (error) {
       setResult({
@@ -112,6 +117,18 @@ export default function ImportProductsPage() {
                 <li>• Preços devem ser números positivos</li>
                 <li>• IVA deve estar entre 0 e 100</li>
               </ul>
+            </div>
+
+            {/* Admin password */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Password de administração</label>
+              <input
+                type="password"
+                value={adminSecret}
+                onChange={(e) => setAdminSecret(e.target.value)}
+                className="input-field"
+                autoComplete="current-password"
+              />
             </div>
 
             {/* Template Download */}

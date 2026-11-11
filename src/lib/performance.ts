@@ -16,15 +16,8 @@ export const PERFORMANCE_CONFIG = {
   
   // Resource hints
   preload: {
-    criticalImages: [
-      '/images/categories/hero/hero-main.png',
-      '/images/categories/clothing/clothing-hero.jpg',
-      '/images/categories/candles/candles-hero.png',
-      '/images/categories/decorative-elements/decorative-elements.png',
-    ],
-    criticalFonts: [
-      '/fonts/inter-var.woff2',
-    ],
+    criticalImages: [] as string[],
+    criticalFonts: [] as string[],
   },
   
   // Bundle optimization
@@ -153,7 +146,7 @@ export function trackCoreWebVitals() {
   // Track First Input Delay (FID)
   new PerformanceObserver((entryList) => {
     const entries = entryList.getEntries()
-    entries.forEach(entry => {
+    entries.forEach((entry: any) => {
       if (window.gtag) {
         window.gtag('event', 'web_vitals', {
           name: 'FID',
@@ -169,7 +162,7 @@ export function trackCoreWebVitals() {
   let clsValue = 0
   new PerformanceObserver((entryList) => {
     const entries = entryList.getEntries()
-    entries.forEach(entry => {
+    entries.forEach((entry: any) => {
       if (!entry.hadRecentInput) {
         clsValue += entry.value
       }
@@ -203,7 +196,7 @@ export function getOptimizedImageProps(src: string, alt: string, priority = fals
 export function analyzeBundleSize() {
   if (typeof window === 'undefined') return
 
-  const resources = performance.getEntriesByType('resource')
+  const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[]
   const jsResources = resources.filter(r => r.name.includes('.js'))
   const cssResources = resources.filter(r => r.name.includes('.css'))
   

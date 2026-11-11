@@ -4,7 +4,7 @@ import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
-import PerformanceOptimizer, { CriticalCSS, ResourceHints } from "@/components/performance/PerformanceOptimizer";
+import PerformanceOptimizer, { ResourceHints } from "@/components/performance/PerformanceOptimizer";
 import { generateMetadata, generateOrganizationSchema, generateWebSiteSchema } from "@/lib/seo";
 import { SEO_CONFIG } from "@/lib/seoConfig";
 
@@ -35,34 +35,7 @@ export default function RootLayout({
   return (
     <html lang="pt" className={inter.variable}>
       <head>
-        <CriticalCSS />
         <ResourceHints />
-        
-        {/* Preload das imagens críticas para carregamento mais rápido */}
-        <link
-          rel="preload"
-          as="image"
-          href="/images/categories/hero/hero-main.png"
-          type="image/png"
-        />
-        <link
-          rel="preload"
-          as="image"
-          href="/images/categories/clothing/clothing-hero.jpg"
-          type="image/jpeg"
-        />
-        <link
-          rel="preload"
-          as="image"
-          href="/images/categories/candles/candles-hero.png"
-          type="image/png"
-        />
-        <link
-          rel="preload"
-          as="image"
-          href="/images/categories/decorative-elements/decorative-elements.png"
-          type="image/png"
-        />
         
         {/* Structured Data - JSON-LD */}
         <script
