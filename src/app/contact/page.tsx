@@ -1,308 +1,122 @@
-'use client'
+import type { Metadata } from 'next'
+import Link from 'next/link'
+import { ArrowUpRight, Clock, Instagram, Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
+import ContactForm from '@/components/contact/ContactForm'
+import { MAPS_URL } from '@/components/home/VisitSection'
+import { BUSINESS } from '@/lib/business'
 
-import { useState } from 'react'
-import { Mail, Phone, MapPin, Clock, Send, CheckCircle } from 'lucide-react'
-
-const WHATSAPP_NUMBER = '351916350502'
-const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`
-
-const ASSUNTO_LABELS: Record<string, string> = {
-  duvida: 'Dúvida sobre produto',
-  pedido: 'Pedido especial',
-  devolucao: 'Devolução/Troca',
-  parceria: 'Parceria',
-  outro: 'Outro'
+export const metadata: Metadata = {
+  title: 'Contactos | RedVelvet',
+  description: `Fale com a RedVelvet pelo WhatsApp, telefone ou email, ou visite a loja em Lisboa: ${BUSINESS.address}.`,
+  alternates: { canonical: '/contact/' },
 }
 
-export default function Contact() {
-  const [formData, setFormData] = useState({
-    nome: '',
-    email: '',
-    telefone: '',
-    assunto: '',
-    mensagem: ''
-  })
-  const [isSubmitted, setIsSubmitted] = useState(false)
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const assuntoLabel = formData.assunto ? ASSUNTO_LABELS[formData.assunto] || formData.assunto : ''
-    const text = [
-      '*Contacto RedVelvet*',
-      '',
-      `Nome: ${formData.nome}`,
-      `Email: ${formData.email}`,
-      formData.telefone ? `Telefone: ${formData.telefone}` : '',
-      assuntoLabel ? `Assunto: ${assuntoLabel}` : '',
-      '',
-      formData.mensagem
-    ].filter(Boolean).join('\n')
-    const url = `${WHATSAPP_URL}?text=${encodeURIComponent(text)}`
-    window.open(url, '_blank', 'noopener,noreferrer')
-    setIsSubmitted(true)
-    setTimeout(() => setIsSubmitted(false), 4000)
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
-  }
-
+function TikTok({ size = 18 }: { size?: number }) {
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative py-24 lg:py-32 bg-gradient-to-br from-cream-50 via-white to-cream-100">
-        <div className="container-luxury">
-          <div className="text-center mb-20 animate-fade-in-up">
-            <div className="flex items-center justify-center space-x-4 mb-6">
-              <div className="w-12 h-px bg-redvelvet-500"></div>
-              <span className="text-redvelvet-500 font-medium tracking-widest text-sm uppercase">Contactos</span>
-              <div className="w-12 h-px bg-redvelvet-500"></div>
-            </div>
-            <h1 className="heading-luxury text-4xl lg:text-6xl mb-6">
-              Entre em Contacto
-            </h1>
-            <p className="text-luxury text-xl max-w-3xl mx-auto">
-              Estamos aqui para ajudar. Entre em contacto connosco para qualquer dúvida, 
-              sugestão ou pedido especial.
-            </p>
-          </div>
-        </div>
-      </section>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
+    </svg>
+  )
+}
 
-      {/* Contact Info & Form */}
-      <section className="section-spacing bg-white">
-        <div className="container-luxury">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-            {/* Contact Information */}
-            <div className="animate-fade-in-up">
-              <h2 className="heading-luxury text-3xl lg:text-4xl mb-8">
-                Informações de Contacto
-              </h2>
-              
-              <div className="space-y-8">
-                {/* Email */}
-                <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-redvelvet-500/10 border border-redvelvet-300/30 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Mail size={20} className="text-redvelvet-500" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-redvelvet-900 mb-2">Email</h3>
-                    <p className="text-luxury mb-1">redvelvet.homeliving@gmail.com</p>
-                    <p className="text-sm text-redvelvet-600">Resposta em até 24 horas</p>
-                  </div>
-                </div>
+const CHANNELS = [
+  { icon: MessageCircle, label: 'WhatsApp', value: 'Enviar mensagem', note: BUSINESS.phone, href: `https://wa.me/${BUSINESS.whatsapp}`, external: true, dark: true },
+  { icon: Phone, label: 'Telefone', value: BUSINESS.phone, note: 'Nos horários da loja', href: BUSINESS.phoneHref, external: false, dark: false },
+  { icon: Mail, label: 'Email', value: BUSINESS.email, note: 'Para pedidos detalhados', href: `mailto:${BUSINESS.email}`, external: false, dark: false },
+]
 
-                {/* Telefone */}
-                <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-redvelvet-500/10 border border-redvelvet-300/30 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Phone size={20} className="text-redvelvet-500" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-redvelvet-900 mb-2">Telefone</h3>
-                    <a href="tel:+351916350502" className="text-luxury mb-1 hover:text-redvelvet-500 transition-colors">+351 916 350 502</a>
-                  </div>
-                </div>
+export default function ContactPage() {
+  return (
+    <div className="bg-[#f7f3ee]">
+      <header className="container-luxury pb-10 pt-[clamp(40px,7vw,96px)]">
+        <p className="rv-rise flex items-center gap-2.5 text-xs font-medium uppercase tracking-[0.28em] text-redvelvet-500">
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-redvelvet-500" /> Contactos
+        </p>
+        <h1 className="mt-4 font-serif text-[clamp(40px,6vw,88px)] font-normal leading-[0.98] tracking-[-0.03em] text-[#1c1012]">
+          <span className="rv-line"><span style={{ animationDelay: '.1s' }}>Fale <em className="italic text-[#8a5a60]">connosco.</em></span></span>
+        </h1>
+        <p className="rv-rise mt-5 max-w-[34rem] text-[16px] leading-relaxed text-[#6b5a5c]" style={{ animationDelay: '.3s' }}>
+          Dúvidas sobre uma peça, uma encomenda ou uma oferta? O WhatsApp é a forma mais rápida.
+          Se for sobre uma encomenda, tenha o número à mão.
+        </p>
+      </header>
 
-                {/* Address */}
-                <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-redvelvet-500/10 border border-redvelvet-300/30 rounded-full flex items-center justify-center flex-shrink-0">
-                    <MapPin size={20} className="text-redvelvet-500" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-redvelvet-900 mb-2">Morada</h3>
-                    <p className="text-luxury mb-1">Avenida David Morão Ferreira, 55 A</p>
-                    <p className="text-luxury mb-1">1750-220 Lisboa, Portugal</p>
-                    <p className="text-sm text-redvelvet-600">Showroom por marcação</p>
-                  </div>
-                </div>
-
-                {/* Hours */}
-                <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-redvelvet-500/10 border border-redvelvet-300/30 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Clock size={20} className="text-redvelvet-500" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-redvelvet-900 mb-2">Horário de Funcionamento</h3>
-                    <div className="text-luxury space-y-1">
-                      <p>Segunda - Sexta: 15h00 - 17h00</p>
-                      <p>Sábado: 10h00 - 19h00</p>
-                      <p>Domingo: Encerrado</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Social Media */}
-              <div className="mt-12 pt-8 border-t border-redvelvet-200">
-                <h3 className="font-semibold text-redvelvet-900 mb-4">Siga-nos</h3>
-                <div className="flex space-x-4">
-                  <a href="https://instagram.com/red_velvet_fashion_pt" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-redvelvet-500/10 border border-redvelvet-300/30 rounded-full flex items-center justify-center hover:bg-redvelvet-500 hover:text-white transition-colors duration-300">
-                    <span className="text-sm font-semibold">ig</span>
-                  </a>
-                  <a href="https://www.tiktok.com/@red_velvet_fashion_deco?_r=1&_t=ZG-93jMo7L9z29" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-redvelvet-500/10 border border-redvelvet-300/30 rounded-full flex items-center justify-center hover:bg-redvelvet-500 hover:text-white transition-colors duration-300">
-                    <span className="text-sm font-semibold">tt</span>
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            {/* Contact Form */}
-            <div className="animate-fade-in-up-delay">
-              <div className="card-luxury p-8">
-                <h2 className="heading-luxury text-3xl mb-8">
-                  Envie-nos uma Mensagem
-                </h2>
-                
-                {isSubmitted ? (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-green-100 border border-green-300 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <CheckCircle size={32} className="text-green-600" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-green-600 mb-2">Abrir WhatsApp</h3>
-                    <p className="text-luxury">O WhatsApp deve ter aberto com a sua mensagem. Se não abriu, use o número +351 916 350 502 para nos contactar.</p>
-                  </div>
-                ) : (
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label htmlFor="nome" className="block text-sm font-medium text-redvelvet-900 mb-2">
-                          Nome *
-                        </label>
-                        <input
-                          type="text"
-                          id="nome"
-                          name="nome"
-                          required
-                          value={formData.nome}
-                          onChange={handleChange}
-                          className="input-luxury"
-                          placeholder="O seu nome completo"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-redvelvet-900 mb-2">
-                          Email *
-                        </label>
-                        <input
-                          type="email"
-                          id="email"
-                          name="email"
-                          required
-                          value={formData.email}
-                          onChange={handleChange}
-                          className="input-luxury"
-                          placeholder="o.seu@email.com"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label htmlFor="telefone" className="block text-sm font-medium text-redvelvet-900 mb-2">
-                          Telefone
-                        </label>
-                        <input
-                          type="tel"
-                          id="telefone"
-                          name="telefone"
-                          value={formData.telefone}
-                          onChange={handleChange}
-                          className="input-luxury"
-                          placeholder="+351 XXX XXX XXX"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="assunto" className="block text-sm font-medium text-redvelvet-900 mb-2">
-                          Assunto *
-                        </label>
-                        <select
-                          id="assunto"
-                          name="assunto"
-                          required
-                          value={formData.assunto}
-                          onChange={handleChange}
-                          className="input-luxury"
-                        >
-                          <option value="">Selecione um assunto</option>
-                          <option value="duvida">Dúvida sobre produto</option>
-                          <option value="pedido">Pedido especial</option>
-                          <option value="devolucao">Devolução/Troca</option>
-                          <option value="parceria">Parceria</option>
-                          <option value="outro">Outro</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label htmlFor="mensagem" className="block text-sm font-medium text-redvelvet-900 mb-2">
-                        Mensagem *
-                      </label>
-                      <textarea
-                        id="mensagem"
-                        name="mensagem"
-                        required
-                        rows={6}
-                        value={formData.mensagem}
-                        onChange={handleChange}
-                        className="input-luxury resize-none"
-                        placeholder="Conte-nos como podemos ajudar..."
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="btn-primary group flex items-center justify-center space-x-3 w-full"
-                    >
-                      <Send size={20} />
-                      <span>Enviar Mensagem</span>
-                    </button>
-                  </form>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Map Section */}
-      <section className="section-spacing gradient-luxury">
-        <div className="container-luxury">
-          <div className="text-center mb-12 animate-fade-in-up">
-            <h2 className="heading-luxury text-3xl lg:text-4xl mb-6">Encontre-nos</h2>
-            <p className="text-luxury text-xl max-w-2xl mx-auto">
-              Visite o nosso showroom em Lisboa e descubra as nossas peças exclusivas.
-            </p>
-          </div>
-
-          <div className="card-luxury p-2 animate-fade-in-up-delay">
-            <div className="aspect-[16/9] w-full overflow-hidden rounded-sm border border-redvelvet-200">
-              <iframe
-                title="Mapa - Avenida David Morão Ferreira, 55 A - Lisboa"
-                src="https://www.google.com/maps?q=Avenida%20David%20Mor%C3%A3o%20Ferreira%2C%2055%20A%2C%201750-220%20Lisboa&output=embed"
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                loading="lazy"
-                allowFullScreen
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-            </div>
-            <div className="mt-3 text-center">
+      <div className="container-luxury">
+        <ul className="rv-rise grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4" style={{ animationDelay: '.4s' }}>
+          {CHANNELS.map((c) => (
+            <li key={c.label}>
               <a
-                href="https://www.google.com/maps/search/?api=1&query=Avenida%20David%20Mor%C3%A3o%20Ferreira%2C%2055%20A%2C%201750-220%20Lisboa"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-redvelvet-600 underline hover:text-redvelvet-700"
+                href={c.href}
+                {...(c.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                className={`group flex h-full items-center gap-4 rounded-[20px] p-5 transition-transform active:scale-[.99] md:min-h-[150px] md:flex-col md:items-stretch md:justify-between md:gap-0 md:rounded-[24px] md:p-6 ${
+                  c.dark ? 'bg-[#210a0f] text-[#f7efe9]' : 'bg-white text-[#1c1012]'
+                }`}
               >
-                Abrir no Google Maps
+                <div className="flex shrink-0 items-center justify-between md:w-full">
+                  <c.icon size={22} className={c.dark ? 'text-[#e9a8ae]' : 'text-redvelvet-500'} />
+                  <ArrowUpRight size={18} className="hidden opacity-50 transition-transform duration-300 group-hover:rotate-45 group-hover:opacity-100 md:block" />
+                </div>
+                <div className="min-w-0 flex-1 md:mt-8 md:flex-none">
+                  <p className={`text-[13px] ${c.dark ? 'text-[#f7efe9]/60' : 'text-[#6b5a5c]'}`}>{c.label}</p>
+                  <p className="mt-0.5 text-[16px] font-medium md:mt-1 md:text-[17px]">
+                    {c.value.includes('@') ? <>{c.value.split('@')[0]}@<wbr />{c.value.split('@')[1]}</> : c.value}
+                  </p>
+                  <p className={`mt-0.5 text-[13px] ${c.dark ? 'text-[#f7efe9]/60' : 'text-[#6b5a5c]'}`}>{c.note}</p>
+                </div>
+                <ArrowUpRight size={18} className="shrink-0 opacity-50 md:hidden" />
               </a>
-            </div>
+            </li>
+          ))}
+        </ul>
+
+        <div className="grid grid-cols-1 gap-10 py-[clamp(56px,7vw,96px)] lg:grid-cols-12 lg:gap-12">
+          <div className="space-y-10 lg:col-span-5">
+            <section>
+              <h2 className="font-serif text-[26px] font-normal text-[#1c1012]">A loja em Lisboa</h2>
+              <ul className="mt-5 space-y-4 text-[15px] text-[#1c1012]/85">
+                <li className="flex gap-3"><MapPin size={18} className="mt-0.5 shrink-0 text-redvelvet-500" />{BUSINESS.address}</li>
+                <li className="flex gap-3">
+                  <Clock size={18} className="mt-0.5 shrink-0 text-redvelvet-500" />
+                  <span>{BUSINESS.hours.map((h) => <span key={h} className="block">{h}</span>)}</span>
+                </li>
+              </ul>
+              <a href={MAPS_URL} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex h-12 items-center gap-2 rounded-full border border-[#1c1012]/20 px-6 text-[15px] text-[#1c1012] hover:bg-[#1c1012]/5">
+                Como chegar <ArrowUpRight size={16} />
+              </a>
+            </section>
+            <section>
+              <h2 className="font-serif text-[26px] font-normal text-[#1c1012]">Siga as novidades</h2>
+              <div className="mt-5 flex gap-3">
+                <a href={BUSINESS.instagram} target="_blank" rel="noopener noreferrer" className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-5 text-[15px] text-[#1c1012] hover:bg-white/70">
+                  <Instagram size={18} /> Instagram
+                </a>
+                <a href={BUSINESS.tiktok} target="_blank" rel="noopener noreferrer" className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-5 text-[15px] text-[#1c1012] hover:bg-white/70">
+                  <TikTok /> TikTok
+                </a>
+              </div>
+            </section>
+            <p className="text-sm text-[#6b5a5c]">
+              Questões sobre portes, prazos ou devoluções? Veja <Link href="/shipping/" className="underline underline-offset-4">Envios e Devoluções</Link> ou as{' '}
+              <Link href="/#faq" className="underline underline-offset-4">perguntas frequentes</Link>.
+            </p>
+          </div>
+          <div className="lg:col-span-7">
+            <ContactForm />
           </div>
         </div>
-      </section>
+
+        <div className="pb-[clamp(64px,8vw,112px)]">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-[24px] bg-[#ede6de] md:aspect-[21/9]">
+            <iframe
+              title={`Mapa — ${BUSINESS.address}`}
+              src={`https://www.google.com/maps?q=${encodeURIComponent(BUSINESS.address)}&output=embed`}
+              className="absolute inset-0 h-full w-full border-0"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

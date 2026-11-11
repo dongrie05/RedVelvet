@@ -1,204 +1,104 @@
-'use client'
+import type { Metadata } from 'next'
+import Image from 'next/image'
+import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
+import CategoryTiles from '@/components/home/CategoryTiles'
+import VisitSection from '@/components/home/VisitSection'
+import { BUSINESS } from '@/lib/business'
+import { FREE_SHIPPING_THRESHOLD } from '@/lib/shop'
 
-import { ArrowRight, Heart, Users, Award, Globe } from 'lucide-react'
+export const metadata: Metadata = {
+  title: 'Sobre nós | RedVelvet',
+  description: 'A RedVelvet é uma loja de decoração, velas e roupa em Lisboa, com loja online e envio para todo o país.',
+  alternates: { canonical: '/about/' },
+}
 
-export default function About() {
+const PRINCIPLES = [
+  {
+    title: 'Escolher com cuidado',
+    text: 'Cada peça é selecionada pela qualidade, pelo design e pela forma como se junta ao resto da casa — ou ao seu guarda-roupa.',
+  },
+  {
+    title: 'Perto de quem compra',
+    text: 'Pode ver tudo ao vivo na loja em Lisboa, ou falar connosco pelo WhatsApp antes de encomendar. Respondemos nós, não um robô.',
+  },
+  {
+    title: 'Comprar sem receios',
+    text: `Pagamento com MB WAY, Multibanco ou cartão, envio em ${BUSINESS.shippingDays}, grátis em Portugal Continental desde ${FREE_SHIPPING_THRESHOLD} €, e 14 dias para devolver.`,
+  },
+]
+
+export default function AboutPage() {
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative py-24 lg:py-32 bg-gradient-to-br from-cream-50 via-white to-cream-100">
+    <>
+      <section className="bg-[#f7f3ee] pb-[clamp(64px,8vw,112px)] pt-[clamp(40px,7vw,96px)]">
         <div className="container-luxury">
-          <div className="text-center mb-20 animate-fade-in-up">
-            <div className="flex items-center justify-center space-x-4 mb-6">
-              <div className="w-12 h-px bg-redvelvet-500"></div>
-              <span className="text-redvelvet-500 font-medium tracking-widest text-sm uppercase">Sobre Nós</span>
-              <div className="w-12 h-px bg-redvelvet-500"></div>
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-end">
+            <div className="lg:col-span-8">
+              <p className="rv-rise flex items-center gap-2.5 text-xs font-medium uppercase tracking-[0.28em] text-redvelvet-500">
+                <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-redvelvet-500" /> Sobre nós
+              </p>
+              <h1 className="mt-4 font-serif text-[clamp(40px,6vw,88px)] font-normal leading-[0.98] tracking-[-0.03em] text-[#1c1012]">
+                <span className="rv-line"><span style={{ animationDelay: '.1s' }}>Uma loja pequena,</span></span>
+                <span className="rv-line"><span className="italic text-[#8a5a60]" style={{ animationDelay: '.22s' }}>escolhida peça a peça.</span></span>
+              </h1>
             </div>
-            <h1 className="heading-luxury text-4xl lg:text-6xl mb-6">
-              A Nossa História
-            </h1>
-            <p className="text-luxury text-xl max-w-3xl mx-auto">
-              Uma viagem de paixão pela elegância e sofisticação, criando experiências únicas 
-              através de peças cuidadosamente selecionadas.
+            <p className="rv-rise max-w-[28rem] text-[16px] leading-relaxed text-[#6b5a5c] lg:col-span-4" style={{ animationDelay: '.4s' }}>
+              A RedVelvet é uma loja de decoração, velas e roupa na Avenida David Morão Ferreira, em Lisboa — e aqui, online,
+              para todo o país. Escolhemos cada peça pela forma como faz sentir uma casa, ou quem a veste.
             </p>
           </div>
-        </div>
-      </section>
 
-      {/* Story Section */}
-      <section className="section-spacing bg-white">
-        <div className="container-luxury">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="animate-fade-in-up">
-              <h2 className="heading-luxury text-3xl lg:text-4xl mb-8">
-                Nascemos da Paixão pela Elegância
-              </h2>
-              <div className="space-y-6 text-luxury leading-relaxed">
-                <p>
-                  A RedVelvet nasceu da convicção de que cada espaço merece ser transformado 
-                  num ambiente único e memorável. Fundada em 2024, a nossa marca representa 
-                  a fusão perfeita entre tradição e modernidade.
-                </p>
-                <p>
-                  Cada produto na nossa curadoria é selecionado com base em critérios rigorosos 
-                  de qualidade, design e autenticidade. Acreditamos que a verdadeira elegância 
-                  reside nos detalhes e na capacidade de contar uma história através de cada peça.
-                </p>
-                <p>
-                  A nossa missão é democratizar o acesso ao luxo, oferecendo produtos exclusivos 
-                  que elevam o quotidiano e transformam espaços em verdadeiros refúgios de 
-                  sofisticação e conforto.
-                </p>
-              </div>
+          {/* Mosaico editorial com as fotografias da marca */}
+          <div className="rv-rise mt-12 grid grid-cols-2 gap-3 md:grid-cols-12 md:gap-4" style={{ animationDelay: '.5s' }}>
+            <div className="relative col-span-2 aspect-[4/3] overflow-hidden rounded-[24px] md:col-span-6 md:row-span-2 md:aspect-auto">
+              <Image src="/images/categories/hero/hero-main.png" alt="Casaco vermelho da coleção RedVelvet" fill priority sizes="(max-width: 768px) 100vw, 50vw" className="object-cover object-[50%_20%]" />
             </div>
-            
-            <div className="relative animate-fade-in-up-delay">
-              <div className="aspect-[4/5] bg-gradient-to-br from-redvelvet-100 to-cream-200 border border-redvelvet-200 shadow-luxury flex items-center justify-center">
-                <div className="text-center space-y-4">
-                  <div className="w-24 h-24 bg-redvelvet-500/20 rounded-full flex items-center justify-center mx-auto">
-                    <Heart size={40} className="text-redvelvet-500" />
-                  </div>
-                  <p className="text-redvelvet-600 font-medium">A Nossa História</p>
-                </div>
-              </div>
+            <div className="relative aspect-[4/5] overflow-hidden rounded-[24px] md:col-span-3">
+              <Image src="/images/categories/candles/candles-hero.png" alt="Vela aromática acesa" fill sizes="(max-width: 768px) 50vw, 25vw" className="object-cover" />
+            </div>
+            <div className="relative aspect-[4/5] overflow-hidden rounded-[24px] md:col-span-3">
+              <Image src="/images/categories/decorative-elements/decorative-elements.png" alt="Prateleira com peças de decoração" fill sizes="(max-width: 768px) 50vw, 25vw" className="object-cover object-[50%_40%]" />
+            </div>
+            <div className="relative col-span-2 hidden aspect-[16/9] overflow-hidden rounded-[24px] md:col-span-6 md:block md:aspect-[2/1]">
+              <Image src="/images/categories/clothing/clothing-hero.jpg" alt="Conjunto de roupa vermelho" fill sizes="50vw" className="object-cover object-[50%_30%]" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Values Section */}
-      <section className="section-spacing gradient-luxury">
+      <section className="bg-white py-[clamp(72px,9vw,128px)]">
         <div className="container-luxury">
-          <div className="text-center mb-20 animate-fade-in-up">
-            <div className="flex items-center justify-center space-x-4 mb-6">
-              <div className="w-12 h-px bg-redvelvet-500"></div>
-              <span className="text-redvelvet-500 font-medium tracking-widest text-sm uppercase">Valores</span>
-              <div className="w-12 h-px bg-redvelvet-500"></div>
-            </div>
-            <h2 className="heading-luxury text-4xl lg:text-5xl mb-6">
-              O Que Nos Move
-            </h2>
-            <p className="text-luxury text-xl max-w-3xl mx-auto">
-              Os nossos valores fundamentais guiam cada decisão e cada produto que oferecemos.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            {[
-              {
-                icon: Heart,
-                title: 'Paixão',
-                description: 'Cada produto é escolhido com amor e dedicação, reflectindo a nossa paixão pela beleza e qualidade.'
-              },
-              {
-                icon: Award,
-                title: 'Excelência',
-                description: 'Procuramos constantemente a perfeição em cada detalhe, desde a selecção até à entrega.'
-              },
-              {
-                icon: Users,
-                title: 'Comunidade',
-                description: 'Construímos relacionamentos duradouros com os nossos clientes, criando uma comunidade de amantes da elegância.'
-              }
-            ].map((value, index) => (
-              <div 
-                key={value.title}
-                className="card-luxury p-8 text-center animate-fade-in-up"
-                style={{animationDelay: `${index * 0.1}s`}}
-              >
-                <div className="w-16 h-16 bg-redvelvet-500/10 border border-redvelvet-300/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <value.icon size={32} className="text-redvelvet-500" />
-                </div>
-                <h3 className="heading-luxury text-2xl mb-4">{value.title}</h3>
-                <p className="text-luxury leading-relaxed">{value.description}</p>
-              </div>
+          <h2 className="max-w-[18ch] font-serif text-[clamp(32px,4vw,56px)] font-normal leading-[1.02] tracking-[-0.025em] text-[#1c1012]">
+            O que nos <em className="italic text-[#8a5a60]">guia.</em>
+          </h2>
+          <ol className="mt-12 grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-8">
+            {PRINCIPLES.map((p, i) => (
+              <li key={p.title} className="border-t border-[#1c1012]/[.12] pt-6">
+                <span className="text-xs font-medium tabular-nums tracking-[0.2em] text-redvelvet-500">0{i + 1}</span>
+                <h3 className="mt-3 font-serif text-[26px] font-normal leading-tight text-[#1c1012]">{p.title}</h3>
+                <p className="mt-3 text-[15.5px] leading-[1.65] text-[#6b5a5c]">{p.text}</p>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
       </section>
 
-      {/* Team Section */}
-      <section className="section-spacing bg-white">
+      <section className="bg-[#f7f3ee] py-[clamp(72px,9vw,128px)]">
         <div className="container-luxury">
-          <div className="text-center mb-20 animate-fade-in-up">
-            <div className="flex items-center justify-center space-x-4 mb-6">
-              <div className="w-12 h-px bg-redvelvet-500"></div>
-              <span className="text-redvelvet-500 font-medium tracking-widest text-sm uppercase">Equipa</span>
-              <div className="w-12 h-px bg-redvelvet-500"></div>
-            </div>
-            <h2 className="heading-luxury text-4xl lg:text-5xl mb-6">
-              Conheça a Nossa Equipa
+          <div className="mb-12 flex items-end justify-between gap-6">
+            <h2 className="font-serif text-[clamp(32px,4vw,56px)] font-normal leading-[1.02] tracking-[-0.025em] text-[#1c1012]">
+              Três coleções, <em className="italic text-[#8a5a60]">uma casa.</em>
             </h2>
-            <p className="text-luxury text-xl max-w-3xl mx-auto">
-              Profissionais dedicados que partilham a mesma visão de excelência e sofisticação.
-            </p>
+            <Link href="/shop/" className="rv-link hidden shrink-0 items-center gap-2 text-sm text-[#1c1012] sm:inline-flex">
+              Ver a loja <ArrowRight size={16} />
+            </Link>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-            {[
-              {
-                name: 'Ana Silva',
-                role: 'Fundadora & CEO',
-                description: 'Visionária apaixonada por design e elegância, Ana lidera a RedVelvet com determinação e criatividade.'
-              },
-              {
-                name: 'Carlos Mendes',
-                role: 'Director Criativo',
-                description: 'Especialista em curadoria e design, Carlos é responsável por seleccionar cada peça única da nossa colecção.'
-              },
-              {
-                name: 'Maria Santos',
-                role: 'Directora de Operações',
-                description: 'Garante que cada experiência seja perfeita, desde a selecção até à entrega aos nossos clientes.'
-              }
-            ].map((member, index) => (
-              <div 
-                key={member.name}
-                className="card-luxury p-8 text-center animate-fade-in-up"
-                style={{animationDelay: `${index * 0.1}s`}}
-              >
-                <div className="w-24 h-24 bg-gradient-to-br from-redvelvet-200 to-redvelvet-300 rounded-full mx-auto mb-6 flex items-center justify-center">
-                  <span className="text-redvelvet-700 font-semibold text-lg">
-                    {member.name.split(' ').map(n => n[0]).join('')}
-                  </span>
-                </div>
-                <h3 className="heading-luxury text-xl mb-2">{member.name}</h3>
-                <p className="text-redvelvet-500 font-medium mb-4">{member.role}</p>
-                <p className="text-luxury text-sm leading-relaxed">{member.description}</p>
-              </div>
-            ))}
-          </div>
+          <CategoryTiles />
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="section-spacing gradient-luxury">
-        <div className="container-luxury text-center">
-          <div className="animate-fade-in-up">
-            <h2 className="heading-luxury text-4xl lg:text-5xl mb-6">
-              Junte-se à Nossa História
-            </h2>
-            <p className="text-luxury text-xl mb-12 max-w-3xl mx-auto">
-              Descubra produtos únicos que transformarão o seu espaço e elevarão o seu estilo de vida.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <a
-                href="/shop"
-                className="btn-primary group flex items-center justify-center space-x-3"
-              >
-                <span>Explorar Colecção</span>
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform duration-300" />
-              </a>
-              <a
-                href="/contact"
-                className="btn-secondary"
-              >
-                Contactar-nos
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
+      <VisitSection />
+    </>
   )
 }

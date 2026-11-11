@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight, ArrowUpRight, Clock, Instagram, MapPin, MessageCircle } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
+import CategoryTiles from '@/components/home/CategoryTiles'
+import VisitSection from '@/components/home/VisitSection'
 import ProductCard from '@/components/product/ProductCard'
 import AIOptimizedContent from '@/components/seo/AIOptimizedContent'
 import { getAllProducts } from '@/lib/products'
@@ -13,11 +15,6 @@ export const revalidate = 300
 
 const FEATURED_CODIGOS = ['AMY-GA037', '34SI22362', 'TLGASP']
 
-const CATEGORIES = [
-  { name: 'Decoração', slug: 'decorative-elements', src: '/images/categories/decorative-elements/decorative-elements.png', pos: '50% 40%', alt: 'Prateleira com peças de decoração' },
-  { name: 'Velas', slug: 'velas', src: '/images/categories/candles/candles-hero.png', pos: '50% 50%', alt: 'Velas aromáticas acesas' },
-  { name: 'Roupa', slug: 'roupa', src: '/images/categories/clothing/clothing-hero.jpg', pos: '50% 25%', alt: 'Peça de roupa em fundo vermelho' },
-] as const
 
 function pickFeatured(products: Product[]): Product[] {
   const byCode = FEATURED_CODIGOS.map((c) => products.find((p) => p.codigo === c)).filter(Boolean) as Product[]
@@ -25,7 +22,6 @@ function pickFeatured(products: Product[]): Product[] {
   return [...byCode, ...rest].slice(0, 3)
 }
 
-const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(BUSINESS.address)}`
 
 export default async function Home() {
   const products = await getAllProducts().catch(() => [] as Product[])
@@ -116,34 +112,7 @@ export default async function Home() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 gap-3.5 md:grid-cols-3 md:gap-5">
-            {CATEGORIES.map((c) => (
-              <Link
-                key={c.slug}
-                href={`/shop?category=${c.slug}`}
-                className="group relative block aspect-[4/3] overflow-hidden rounded-[28px] bg-[#e9e2da] md:aspect-[4/5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-redvelvet-500"
-              >
-                <Image
-                  src={c.src}
-                  alt={c.alt}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                  className="object-cover transition-transform duration-700 ease-[cubic-bezier(.22,1,.36,1)] group-hover:scale-105"
-                  style={{ objectPosition: c.pos }}
-                />
-                <div aria-hidden className="absolute inset-0 bg-[linear-gradient(to_top,rgba(20,6,9,.72)_0%,rgba(20,6,9,0)_55%)]" />
-                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-6">
-                  <div>
-                    <h3 className="font-serif text-[30px] font-normal leading-none text-white">{c.name}</h3>
-                    {counts[c.slug] > 0 && <p className="mt-1.5 text-[13px] text-white/75">{counts[c.slug]} peças</p>}
-                  </div>
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/[.16] text-white backdrop-blur-md transition-transform duration-300 group-hover:rotate-45">
-                    <ArrowUpRight size={18} />
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <CategoryTiles counts={counts} />
         </div>
       </section>
 
@@ -171,42 +140,7 @@ export default async function Home() {
         </section>
       )}
 
-      {/* ---------------- VISITE-NOS ---------------- */}
-      <section id="visite" className="scroll-mt-20 bg-[#210a0f] py-[clamp(80px,9vw,120px)] text-[#f7efe9]">
-        <div className="container-luxury grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-end">
-          <div className="lg:col-span-7">
-            <p className="flex items-center gap-3.5 text-xs font-medium uppercase tracking-[0.28em] text-[#f7efe9]/60">
-              <span aria-hidden className="h-px w-8 bg-[#f7efe9]/40" /> Loja física
-            </p>
-            <h2 className="mt-5 font-serif text-[clamp(34px,4.4vw,60px)] font-normal leading-[1.02] tracking-[-0.025em] text-[#f7efe9]">
-              Também nos encontra <em className="italic text-[#e9a8ae]">em Lisboa.</em>
-            </h2>
-            <p className="mt-6 max-w-[30rem] text-base leading-relaxed text-[#f7efe9]/72">
-              Venha ver e sentir as peças ao vivo. Se preferir, falamos pelo WhatsApp e reservamos o que gostar.
-            </p>
-          </div>
-          <div className="space-y-6 lg:col-span-5">
-            <ul className="space-y-4 text-[15px] text-[#f7efe9]/85">
-              <li className="flex gap-3"><MapPin size={18} className="mt-0.5 shrink-0 text-[#e9a8ae]" />{BUSINESS.address}</li>
-              <li className="flex gap-3">
-                <Clock size={18} className="mt-0.5 shrink-0 text-[#e9a8ae]" />
-                <span>{BUSINESS.hours.map((h) => <span key={h} className="block">{h}</span>)}</span>
-              </li>
-            </ul>
-            <div className="flex flex-wrap gap-3">
-              <a href={MAPS_URL} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[48px] items-center gap-2 rounded-full bg-[#f7efe9] px-6 text-[15px] font-medium text-[#210a0f] transition-transform active:scale-[.97]">
-                Como chegar <ArrowUpRight size={16} />
-              </a>
-              <a href={`https://wa.me/${BUSINESS.whatsapp}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[48px] items-center gap-2 rounded-full border border-[#f7efe9]/25 px-6 text-[15px] text-[#f7efe9] transition-colors hover:bg-[#f7efe9]/10">
-                <MessageCircle size={16} /> WhatsApp
-              </a>
-            </div>
-            <a href={BUSINESS.instagram} target="_blank" rel="noopener noreferrer" className="rv-link inline-flex items-center gap-2 text-sm text-[#f7efe9]/70 hover:text-[#f7efe9]">
-              <Instagram size={16} /> Siga-nos no Instagram
-            </a>
-          </div>
-        </div>
-      </section>
+      <VisitSection />
     </AIOptimizedContent>
   )
 }

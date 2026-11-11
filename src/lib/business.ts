@@ -14,7 +14,7 @@ export const BUSINESS = {
   whatsapp: '351916350502',
   instagram: 'https://instagram.com/red_velvet_fashion_pt',
   tiktok: 'https://www.tiktok.com/@red_velvet_fashion_deco',
-  hours: ['Segunda a sexta-feira: 15:00 - 17:00', 'Sábado: 10:00 - 19:00'],
+  hours: ['Segunda a sexta-feira: 15:00 - 17:00', 'Sábado: 10:00 - 19:00', 'Domingo: encerrado'],
   /** Prazo de envio comunicado ao cliente */
   shippingDays: '2 a 5 dias úteis',
   /** Entidade de Resolução Alternativa de Litígios (Lisboa) */
