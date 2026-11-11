@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { ShoppingCart, User, Menu, X, Search } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useCart } from '@/hooks/useCart'
@@ -17,6 +17,17 @@ export default function Header() {
   const { getItemCount } = useCart()
   const itemCount = getItemCount()
   const [bump, setBump] = useState(false)
+
+  const pathname = usePathname()
+  const [atTop, setAtTop] = useState(true)
+  useEffect(() => {
+    const onScroll = () => setAtTop(window.scrollY < 40)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+  // Na homepage, o header funde-se com o hero cor de veludo até se fazer scroll
+  const tone = pathname === '/' && atTop && !isMenuOpen && !isSearchOpen ? 'dark' : 'light'
 
   useEffect(() => {
     const onAdded = () => { setBump(true); setTimeout(() => setBump(false), 350) }
@@ -40,7 +51,7 @@ export default function Header() {
   }
 
   return (
-        <header className="bg-white/95 backdrop-blur-md border-b border-redvelvet-200 sticky top-0 z-50">
+        <header data-tone={tone} className="bg-white/95 backdrop-blur-md border-b border-redvelvet-200 sticky top-0 z-50 transition-colors duration-300">
       <div className="container-luxury">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}

@@ -5,7 +5,7 @@ import { BUSINESS } from '@/lib/business'
 
 export default function Footer() {
   return (
-    <footer className="gradient-dark text-cream-50">
+    <footer className="bg-[#160609] text-cream-50">
       <div className="container-luxury py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Company Info */}

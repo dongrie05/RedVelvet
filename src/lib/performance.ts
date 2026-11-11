@@ -16,15 +16,8 @@ export const PERFORMANCE_CONFIG = {
   
   // Resource hints
   preload: {
-    criticalImages: [
-      '/images/categories/hero/hero-main.png',
-      '/images/categories/clothing/clothing-hero.jpg',
-      '/images/categories/candles/candles-hero.png',
-      '/images/categories/decorative-elements/decorative-elements.png',
-    ],
-    criticalFonts: [
-      '/fonts/inter-var.woff2',
-    ],
+    criticalImages: [] as string[],
+    criticalFonts: [] as string[],
   },
   
   // Bundle optimization

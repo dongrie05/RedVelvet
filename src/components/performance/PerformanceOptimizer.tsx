@@ -128,31 +128,6 @@ export function ResourceHints() {
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       
-      {/* Preload critical resources */}
-      <link
-        rel="preload"
-        as="image"
-        href="/images/categories/hero/hero-main.png"
-        type="image/png"
-      />
-      <link
-        rel="preload"
-        as="image"
-        href="/images/categories/clothing/clothing-hero.jpg"
-        type="image/jpeg"
-      />
-      <link
-        rel="preload"
-        as="image"
-        href="/images/categories/candles/candles-hero.png"
-        type="image/png"
-      />
-      <link
-        rel="preload"
-        as="image"
-        href="/images/categories/decorative-elements/decorative-elements.png"
-        type="image/png"
-      />
     </>
   )
 }
