@@ -15,6 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/shipping/`, lastModified: now, changeFrequency: 'yearly', priority: 0.4 },
     { url: `${base}/terms/`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${base}/privacy/`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
+    { url: `${base}/withdrawal/`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
   ]
   const products = await getAllProducts().catch(() => [])
   return pages.concat(

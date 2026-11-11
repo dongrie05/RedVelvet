@@ -131,6 +131,9 @@ export default function Footer() {
               <Link href="/shipping" className="text-cream-300 hover:text-redvelvet-400 text-sm transition-colors duration-300">
                 Envios e Devoluções
               </Link>
+              <Link href="/withdrawal/" className="text-cream-300 hover:text-redvelvet-400 text-sm transition-colors duration-300">
+                Livre resolução
+              </Link>
               <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener noreferrer" className="text-cream-300 hover:text-redvelvet-400 text-sm transition-colors duration-300">
                 Livro de Reclamações
               </a>

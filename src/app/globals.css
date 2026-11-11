@@ -197,3 +197,13 @@ select.rv-input { padding-right: 40px; }
 .rv-label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: #1c1012; }
 .rv-ship-bar { transition: width .6s cubic-bezier(.22,1,.36,1); }
 @media (prefers-reduced-motion: reduce) { .rv-ship-bar { transition: none; } }
+
+/* ---------- Texto das páginas legais ---------- */
+.legal-body > * + * { margin-top: 0.9em; }
+.legal-body a { color: #1c1012; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(28,16,18,.35); }
+.legal-body a:hover { text-decoration-color: currentColor; }
+.legal-body strong { font-weight: 500; color: #1c1012; }
+.legal-body ul { list-style: none; padding: 0; }
+.legal-body ul > li { position: relative; padding-left: 1.1em; }
+.legal-body ul > li + li { margin-top: .45em; }
+.legal-body ul > li::before { content: ''; position: absolute; left: 0; top: .72em; width: 5px; height: 5px; border-radius: 9999px; background: #C41E3A; }
