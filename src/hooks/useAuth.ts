@@ -103,7 +103,8 @@ export const useAuth = () => {
       options: {
         data: {
           nome
-        }
+        },
+        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/login/?confirmed=1` : undefined
       }
     })
     return { data, error }
@@ -123,7 +124,14 @@ export const useAuth = () => {
   }
 
   const resetPassword = async (email: string) => {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email)
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/reset-password/` : undefined
+    })
+    return { data, error }
+  }
+
+  const updatePassword = async (password: string) => {
+    const { data, error } = await supabase.auth.updateUser({ password })
     return { data, error }
   }
 
@@ -145,6 +153,7 @@ export const useAuth = () => {
     signIn,
     signOut,
     resetPassword,
+    updatePassword,
     updateProfile
   }
 }

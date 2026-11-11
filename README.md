@@ -22,7 +22,8 @@ Next.js 15 (App Router) · Supabase (produtos, clientes, encomendas) · Mollie (
 3. **Mollie**: ativar MB WAY, Multibanco e cartões no dashboard. Primeiro testar com chave `test_…`, depois trocar para `live_…`.
 4. **Compra de teste** ponta a ponta com a chave de teste → confirmar a encomenda `paid` na tabela `orders` e o stock descontado.
 5. Rever os textos de **Termos**, **Privacidade** e **Envios** (`/terms`, `/privacy`, `/shipping`) e os preços de envio para Ilhas/Espanha.
-6. Registar a loja no **Livro de Reclamações Eletrónico** (obrigatório; o link já está no rodapé).
+6. **Supabase → Authentication → URL Configuration**: definir *Site URL* com o domínio final e acrescentar `https://SEU-DOMINIO/auth/*` aos *Redirect URLs* (necessário para a confirmação de email e a recuperação de palavra-passe).
+7. Registar a loja no **Livro de Reclamações Eletrónico** (obrigatório; o link já está no rodapé).
 
 ## Gerir encomendas
 
