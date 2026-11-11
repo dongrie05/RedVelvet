@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import ProductPageClient from './ProductPageClient'
-import { getProduct } from '@/lib/products'
+import { getAllProducts, getProduct } from '@/lib/products'
+import { getCategorySlug } from '@/lib/categoryUtils'
 import { SEO_CONFIG } from '@/lib/seoConfig'
 
 export const revalidate = 60
@@ -29,5 +30,9 @@ export default async function ProductPage({ params }: Props) {
   const { id } = await params
   const product = await getProduct(id)
   if (!product) notFound()
-  return <ProductPageClient product={product} />
+  const slug = getCategorySlug(product.categoria)
+  const related = (await getAllProducts().catch(() => []))
+    .filter((p) => p.id !== product.id && p.stock > 0 && getCategorySlug(p.categoria) === slug)
+    .slice(0, 4)
+  return <ProductPageClient product={product} related={related} />
 }

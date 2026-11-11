@@ -164,7 +164,7 @@ export default async function Home() {
                 Ver coleção completa <ArrowRight size={16} />
               </Link>
             </div>
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-7 md:gap-x-5 md:gap-y-10 lg:grid-cols-3">
               {featured.map((p) => <ProductCard key={p.id} product={p} />)}
             </div>
           </div>
