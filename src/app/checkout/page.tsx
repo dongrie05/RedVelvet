@@ -3,16 +3,58 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Lock, ShieldCheck, Truck } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Loader2, Lock } from 'lucide-react'
 import { useCart } from '@/hooks/useCart'
 import { useAuth } from '@/hooks/useAuth'
 import { calculateShipping, formatPrice, round2, SHIPPING_COUNTRIES, ShippingCountry } from '@/lib/shop'
+import { Guarantees, PaymentPills } from '@/components/checkout/Trust'
+import type { CartItem } from '@/types'
 
 type Form = {
   nome: string; email: string; telefone: string; morada: string; cidade: string
   codigo_postal: string; pais: ShippingCountry; nif: string; notas: string
 }
 type Errors = Partial<Record<keyof Form | 'terms', string>>
+
+function ItemsList({ items }: { items: CartItem[] }) {
+  return (
+    <ul className="space-y-4">
+      {items.map((item) => (
+        <li key={item.id} className="flex items-center gap-3.5">
+          <div className="relative h-[70px] w-14 shrink-0">
+            <div className="relative h-full w-full overflow-hidden rounded-[10px] bg-[#ede6de]">
+              {item.imagem_url && <Image src={item.imagem_url} alt={item.nome} fill sizes="56px" className="object-cover" />}
+            </div>
+            <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#1c1012]/80 px-1 text-[11px] text-white">
+              {item.quantidade}
+            </span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-[#1c1012]">{item.nome}</p>
+            {item.tamanho && <p className="text-[12.5px] text-[#6b5a5c]">Tamanho {item.tamanho}</p>}
+          </div>
+          <p className="text-sm tabular-nums text-[#1c1012]">{formatPrice(item.preco * item.quantidade)}</p>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function Totals({ subtotal, shipping, total, country }: { subtotal: number; shipping: number; total: number; country: ShippingCountry }) {
+  return (
+    <dl className="mt-5 space-y-2.5 border-t border-[#1c1012]/[.1] pt-5 text-[15px] text-[#1c1012]">
+      <div className="flex justify-between"><dt className="text-[#6b5a5c]">Subtotal</dt><dd className="tabular-nums">{formatPrice(subtotal)}</dd></div>
+      <div className="flex justify-between gap-4">
+        <dt className="text-[#6b5a5c]">Envio <span className="text-[13px]">· {SHIPPING_COUNTRIES[country].label}</span></dt>
+        <dd className="tabular-nums">{shipping === 0 ? <span className="text-[#2f7d4f]">Grátis</span> : formatPrice(shipping)}</dd>
+      </div>
+      <div className="mt-3 flex items-baseline justify-between border-t border-[#1c1012]/[.1] pt-4">
+        <dt className="font-medium text-[#1c1012]">Total <span className="text-[12.5px] font-normal text-[#6b5a5c]">IVA incluído</span></dt>
+        <dd className="text-[22px] font-medium tabular-nums text-[#1c1012]">{formatPrice(total)}</dd>
+      </div>
+    </dl>
+  )
+}
 
 export default function CheckoutPage() {
   const { cart } = useCart()
@@ -47,17 +89,19 @@ export default function CheckoutPage() {
 
   const validate = () => {
     const e: Errors = {}
-    if (!form.nome.trim()) e.nome = 'Nome é obrigatório'
+    if (!form.nome.trim()) e.nome = 'Indique o seu nome'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) e.email = 'Email inválido'
-    if (form.telefone.replace(/\D/g, '').length < 9) e.telefone = 'Telefone inválido'
-    if (!form.morada.trim()) e.morada = 'Morada é obrigatória'
-    if (!form.cidade.trim()) e.cidade = 'Localidade é obrigatória'
+    if (form.telefone.replace(/\D/g, '').length < 9) e.telefone = 'Telemóvel inválido'
+    if (!form.morada.trim()) e.morada = 'Indique a morada'
+    if (!form.cidade.trim()) e.cidade = 'Indique a localidade'
     if (form.pais.startsWith('PT') ? !/^\d{4}-\d{3}$/.test(form.codigo_postal.trim()) : !form.codigo_postal.trim())
-      e.codigo_postal = form.pais.startsWith('PT') ? 'Formato 1234-567' : 'Código postal é obrigatório'
-    if (form.nif && !/^\d{9}$/.test(form.nif.trim())) e.nif = 'NIF deve ter 9 dígitos'
-    if (!acceptTerms) e.terms = 'Tem de aceitar os termos para continuar'
+      e.codigo_postal = form.pais.startsWith('PT') ? 'Formato 1234-567' : 'Indique o código postal'
+    if (form.nif && !/^\d{9}$/.test(form.nif.trim())) e.nif = 'O NIF tem 9 dígitos'
+    if (!acceptTerms) e.terms = 'Aceite os termos para continuar'
     setErrors(e)
-    return Object.keys(e).length === 0
+    const first = Object.keys(e)[0]
+    if (first) document.getElementById(first)?.focus()
+    return !first
   }
 
   const handleSubmit = async (ev: React.FormEvent) => {
@@ -88,148 +132,150 @@ export default function CheckoutPage() {
 
   if (cart.items.length === 0) {
     return (
-      <div className="min-h-[60vh] bg-cream-50 flex items-center justify-center px-4">
+      <div className="flex min-h-[60vh] items-center justify-center bg-[#f7f3ee] px-4">
         <div className="text-center">
-          <h1 className="heading-luxury text-2xl mb-4">O carrinho está vazio</h1>
-          <p className="text-redvelvet-600 mb-8">Adicione produtos ao carrinho antes de finalizar a compra.</p>
-          <Link href="/shop" className="btn-primary">Ir para a Loja</Link>
+          <h1 className="font-serif text-[clamp(32px,4vw,48px)] font-normal text-[#1c1012]">O carrinho está <em className="italic text-[#8a5a60]">vazio.</em></h1>
+          <p className="mt-3 text-[15.5px] text-[#6b5a5c]">Adicione produtos antes de finalizar a compra.</p>
+          <Link href="/shop/" className="mt-8 inline-flex h-12 items-center rounded-full bg-[#210a0f] px-7 text-[15px] font-medium text-[#f7efe9]">Ver a loja</Link>
         </div>
       </div>
     )
   }
 
-  const field = (name: keyof Form, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}, full = false) => (
+  const field = (name: keyof Form, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}, full = false, hint?: string) => (
     <div className={full ? 'md:col-span-2' : ''}>
-      <label htmlFor={name} className="block text-sm font-medium text-redvelvet-900 mb-2">{label}</label>
+      <label htmlFor={name} className="rv-label">{label}</label>
       <input
         id={name}
         name={name}
         value={form[name]}
         onChange={onChange}
         aria-invalid={!!errors[name]}
-        className={`input-field ${errors[name] ? 'border-red-500' : ''}`}
+        aria-describedby={errors[name] ? `${name}-err` : undefined}
+        className="rv-input"
         {...props}
       />
-      {errors[name] && <p className="text-red-600 text-sm mt-1">{errors[name]}</p>}
+      {errors[name] ? (
+        <p id={`${name}-err`} className="mt-1.5 text-[13px] text-redvelvet-600">{errors[name]}</p>
+      ) : hint ? (
+        <p className="mt-1.5 text-[12.5px] text-[#6b5a5c]">{hint}</p>
+      ) : null}
     </div>
   )
 
+  const section = 'mt-7 border-t border-[#1c1012]/[.08] pt-7'
+  const h2 = 'mb-5 font-serif text-[22px] font-normal text-[#1c1012]'
+
   return (
-    <div className="min-h-screen bg-cream-50">
-      <div className="container-luxury py-8 lg:py-12">
-        <div className="mb-8">
-          <Link href="/cart" className="inline-flex items-center gap-2 text-redvelvet-500 hover:text-redvelvet-600 mb-4">
-            <ArrowLeft size={16} /> <span>Voltar ao carrinho</span>
-          </Link>
-          <h1 className="heading-luxury text-3xl">Finalizar compra</h1>
-        </div>
+    <div className="bg-[#f7f3ee]">
+      <div className="container-luxury pb-6 pt-[clamp(24px,4vw,48px)]">
+        <Link href="/cart/" className="inline-flex items-center gap-1.5 text-[13px] text-[#6b5a5c] hover:text-[#1c1012]">
+          <ArrowLeft size={14} /> Voltar ao carrinho
+        </Link>
+        <ol className="mt-5 flex items-center gap-2 text-[13px] text-[#6b5a5c]" aria-label="Passos">
+          <li>Carrinho</li><li aria-hidden className="text-[#1c1012]/30">·</li>
+          <li className="font-medium text-[#1c1012]" aria-current="step">Dados de envio</li><li aria-hidden className="text-[#1c1012]/30">·</li>
+          <li>Pagamento</li>
+        </ol>
+        <h1 className="mt-3 font-serif text-[clamp(32px,4vw,52px)] font-normal leading-none tracking-[-0.025em] text-[#1c1012]">
+          Finalizar <em className="italic text-[#8a5a60]">compra.</em>
+        </h1>
 
-        <form onSubmit={handleSubmit} noValidate className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          <div className="lg:col-span-3 space-y-8">
-            <section className="bg-white border border-redvelvet-100 p-6">
-              <h2 className="text-xl font-serif font-semibold text-redvelvet-900 mb-6">Contacto</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {field('nome', 'Nome completo *', { autoComplete: 'name' }, true)}
-                {field('email', 'Email *', { type: 'email', autoComplete: 'email', placeholder: 'nome@email.com' })}
-                {field('telefone', 'Telemóvel *', { type: 'tel', autoComplete: 'tel', placeholder: '912 345 678' })}
-              </div>
-            </section>
+        {/* Resumo recolhível (telemóvel) */}
+        <details className="group mt-6 rounded-2xl bg-white px-4 lg:hidden">
+          <summary className="flex h-14 cursor-pointer list-none items-center justify-between text-sm text-[#1c1012] [&::-webkit-details-marker]:hidden">
+            <span className="flex items-center gap-1.5">
+              Ver resumo da encomenda <ChevronDown size={16} className="transition-transform duration-200 group-open:rotate-180" />
+            </span>
+            <span className="text-[15px] font-medium tabular-nums">{formatPrice(total)}</span>
+          </summary>
+          <div className="pb-5 pt-1">
+            <ItemsList items={cart.items} />
+            <Totals subtotal={cart.subtotal} shipping={shipping} total={total} country={form.pais} />
+          </div>
+        </details>
+      </div>
 
-            <section className="bg-white border border-redvelvet-100 p-6">
-              <h2 className="text-xl font-serif font-semibold text-redvelvet-900 mb-6">Morada de envio</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label htmlFor="pais" className="block text-sm font-medium text-redvelvet-900 mb-2">País / região *</label>
-                  <select id="pais" name="pais" value={form.pais} onChange={onChange} className="input-field">
-                    {Object.entries(SHIPPING_COUNTRIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                  </select>
-                </div>
-                {field('morada', 'Morada *', { autoComplete: 'street-address', placeholder: 'Rua, número, andar' }, true)}
-                {field('codigo_postal', 'Código postal *', { autoComplete: 'postal-code', placeholder: '1000-000', inputMode: 'numeric' })}
-                {field('cidade', 'Localidade *', { autoComplete: 'address-level2' })}
-                {field('nif', 'NIF para fatura (opcional)', { inputMode: 'numeric', maxLength: 9 })}
-                <div className="md:col-span-2">
-                  <label htmlFor="notas" className="block text-sm font-medium text-redvelvet-900 mb-2">Notas (opcional)</label>
-                  <textarea id="notas" name="notas" value={form.notas} onChange={onChange} rows={3} maxLength={500} className="input-field" placeholder="Ex.: embrulho para oferta, horário de entrega" />
-                </div>
-              </div>
-            </section>
-
-            <section className="bg-white border border-redvelvet-100 p-6">
-              <h2 className="text-xl font-serif font-semibold text-redvelvet-900 mb-3">Pagamento</h2>
-              <p className="text-sm text-redvelvet-700">
-                Será redirecionado para a página segura da Mollie para pagar com <strong>MB WAY, Multibanco, cartão, Apple Pay</strong> ou outro método disponível.
-              </p>
-            </section>
+      <form onSubmit={handleSubmit} noValidate className="container-luxury grid grid-cols-1 gap-8 pb-24 lg:grid-cols-12 lg:gap-12">
+        <div className="rounded-[24px] bg-white p-6 md:p-9 lg:col-span-7">
+          <h2 className={h2}>Contacto</h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {field('nome', 'Nome completo', { autoComplete: 'name' }, true)}
+            {field('email', 'Email', { type: 'email', autoComplete: 'email', inputMode: 'email', placeholder: 'nome@email.com' }, false, 'Enviamos aqui a confirmação.')}
+            {field('telefone', 'Telemóvel', { type: 'tel', autoComplete: 'tel', placeholder: '912 345 678' }, false, 'Só para contacto sobre a entrega.')}
           </div>
 
-          <aside className="lg:col-span-2">
-            <div className="bg-white border border-redvelvet-100 p-6 lg:sticky lg:top-28">
-              <h2 className="text-xl font-serif font-semibold text-redvelvet-900 mb-6">Resumo</h2>
-              <ul className="space-y-4 mb-6">
-                {cart.items.map((item) => (
-                  <li key={item.id} className="flex items-center gap-3">
-                    <div className="relative w-14 h-14 bg-cream-100 overflow-hidden flex-shrink-0">
-                      {item.imagem_url && <Image src={item.imagem_url} alt={item.nome} fill sizes="56px" className="object-cover" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-redvelvet-900 truncate">{item.nome}</p>
-                      <p className="text-xs text-redvelvet-600">
-                        {item.tamanho ? `Tamanho ${item.tamanho} · ` : ''}Qtd. {item.quantidade}
-                      </p>
-                    </div>
-                    <p className="text-sm font-medium text-redvelvet-900">{formatPrice(item.preco * item.quantidade)}</p>
-                  </li>
-                ))}
-              </ul>
-
-              <dl className="space-y-3 border-t border-redvelvet-100 pt-4 text-sm">
-                <div className="flex justify-between"><dt className="text-redvelvet-600">Subtotal</dt><dd>{formatPrice(cart.subtotal)}</dd></div>
-                <div className="flex justify-between">
-                  <dt className="text-redvelvet-600">Envio</dt>
-                  <dd>{shipping === 0 ? <span className="text-green-700">Grátis</span> : formatPrice(shipping)}</dd>
-                </div>
-                <div className="flex justify-between text-lg font-semibold border-t border-redvelvet-100 pt-3">
-                  <dt>Total <span className="text-xs font-normal text-redvelvet-500">(IVA incluído)</span></dt>
-                  <dd className="text-redvelvet-500">{formatPrice(total)}</dd>
-                </div>
-              </dl>
-
-              <label className="flex items-start gap-3 mt-6 text-sm text-redvelvet-800">
-                <input
-                  type="checkbox"
-                  checked={acceptTerms}
-                  onChange={(e) => { setAcceptTerms(e.target.checked); setErrors((er) => ({ ...er, terms: undefined })) }}
-                  className="mt-1"
-                />
-                <span>
-                  Li e aceito os <Link href="/terms" target="_blank" className="underline">Termos e Condições</Link> e a{' '}
-                  <Link href="/privacy" target="_blank" className="underline">Política de Privacidade</Link>.
-                </span>
-              </label>
-              {errors.terms && <p className="text-red-600 text-sm mt-1">{errors.terms}</p>}
-
-              {serverError && (
-                <div role="alert" className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm">{serverError}</div>
-              )}
-
-              <button
-                type="submit"
-                disabled={isProcessing}
-                className="w-full mt-6 py-4 px-6 font-medium bg-redvelvet-500 hover:bg-redvelvet-600 text-white disabled:opacity-60 disabled:cursor-wait transition-colors"
-              >
-                {isProcessing ? 'A redirecionar para o pagamento…' : `Encomendar e pagar ${formatPrice(total)}`}
-              </button>
-
-              <ul className="mt-6 space-y-2 text-xs text-redvelvet-600">
-                <li className="flex items-center gap-2"><Lock size={14} className="text-green-700" /> Pagamento seguro processado pela Mollie</li>
-                <li className="flex items-center gap-2"><Truck size={14} className="text-green-700" /> Envio grátis em Portugal Continental a partir de 50 €</li>
-                <li className="flex items-center gap-2"><ShieldCheck size={14} className="text-green-700" /> 14 dias para devolução</li>
-              </ul>
+          <div className={section}>
+            <h2 className={h2}>Morada de envio</h2>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label htmlFor="pais" className="rv-label">País / região</label>
+                <select id="pais" name="pais" value={form.pais} onChange={onChange} className="rv-input" autoComplete="country">
+                  {Object.entries(SHIPPING_COUNTRIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select>
+              </div>
+              {field('morada', 'Morada', { autoComplete: 'street-address', placeholder: 'Rua, número, andar' }, true)}
+              {field('codigo_postal', 'Código postal', { autoComplete: 'postal-code', placeholder: '1000-000', inputMode: 'numeric' })}
+              {field('cidade', 'Localidade', { autoComplete: 'address-level2' })}
+              {field('nif', 'NIF (opcional)', { inputMode: 'numeric', maxLength: 9 }, false, 'Para fatura com contribuinte.')}
+              <div className="md:col-span-2">
+                <label htmlFor="notas" className="rv-label">Notas (opcional)</label>
+                <textarea id="notas" name="notas" value={form.notas} onChange={onChange} rows={3} maxLength={500} className="rv-input" placeholder="Ex.: embrulho para oferta, horário de entrega" />
+              </div>
             </div>
-          </aside>
-        </form>
-      </div>
+          </div>
+
+          <div className={section}>
+            <h2 className={h2}>Pagamento</h2>
+            <p className="text-[14.5px] leading-relaxed text-[#6b5a5c]">
+              No passo seguinte paga na página segura da Mollie. Não guardamos os dados do seu cartão.
+            </p>
+            <PaymentPills className="mt-3.5" />
+          </div>
+        </div>
+
+        <aside className="lg:col-span-5">
+          <div className="rounded-[24px] bg-white p-6 md:p-7 lg:sticky lg:top-[104px]">
+            <h2 className="mb-5 hidden font-serif text-2xl font-normal text-[#1c1012] lg:block">Resumo</h2>
+            <div className="hidden lg:block"><ItemsList items={cart.items} /></div>
+            <div className="lg:block [&>dl]:mt-0 [&>dl]:border-t-0 [&>dl]:pt-0 lg:[&>dl]:mt-5 lg:[&>dl]:border-t lg:[&>dl]:pt-5">
+              <Totals subtotal={cart.subtotal} shipping={shipping} total={total} country={form.pais} />
+            </div>
+
+            <label className="mt-6 flex items-start gap-3 text-sm leading-relaxed text-[#1c1012]/85">
+              <input
+                id="terms"
+                type="checkbox"
+                checked={acceptTerms}
+                onChange={(e) => { setAcceptTerms(e.target.checked); setErrors((er) => ({ ...er, terms: undefined })) }}
+                className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded border-[#1c1012]/30 text-redvelvet-500 focus:ring-redvelvet-500/30"
+              />
+              <span>
+                Li e aceito os <Link href="/terms/" target="_blank" className="underline underline-offset-2">Termos e Condições</Link> e a{' '}
+                <Link href="/privacy/" target="_blank" className="underline underline-offset-2">Política de Privacidade</Link>.
+              </span>
+            </label>
+            {errors.terms && <p className="mt-1.5 text-[13px] text-redvelvet-600">{errors.terms}</p>}
+
+            {serverError && (
+              <div role="alert" className="mt-4 rounded-xl border border-[#f5c2c9] bg-[#fdecee] p-3.5 text-sm text-[#8a1c2b]">{serverError}</div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isProcessing}
+              className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-redvelvet-500 text-[15px] font-medium text-white transition-colors hover:bg-[#a3172f] disabled:cursor-wait disabled:opacity-70"
+            >
+              {isProcessing ? (
+                <><Loader2 size={16} className="animate-spin" /> A abrir pagamento seguro…</>
+              ) : (
+                <><Lock size={16} /> Encomendar e pagar {formatPrice(total)}</>
+              )}
+            </button>
+            <Guarantees />
+          </div>
+        </aside>
+      </form>
     </div>
   )
 }

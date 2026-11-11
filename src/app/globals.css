@@ -181,3 +181,19 @@ header[data-tone="dark"] { background-color: #210a0f; border-color: rgba(247, 23
 header[data-tone="dark"] a, header[data-tone="dark"] button { color: rgba(247, 239, 233, 0.82); }
 header[data-tone="dark"] a:hover, header[data-tone="dark"] button:hover { color: #f7efe9; }
 header[data-tone="dark"] .bg-white a, header[data-tone="dark"] .bg-white button { color: #991b1b; }
+
+/* ---------- Formulários (checkout) ---------- */
+.rv-input {
+  display: block; width: 100%; height: 52px; border-radius: 12px;
+  border: 1px solid rgba(28, 16, 18, 0.15); background-color: #fff;
+  padding: 0 16px; font-size: 15px; color: #1c1012;
+  transition: border-color .2s, box-shadow .2s;
+}
+textarea.rv-input { height: auto; padding-top: 14px; padding-bottom: 14px; }
+select.rv-input { padding-right: 40px; }
+.rv-input::placeholder { color: rgba(28, 16, 18, 0.35); }
+.rv-input:focus { outline: none; border-color: rgba(28, 16, 18, 0.55); box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.12); }
+.rv-input[aria-invalid="true"] { border-color: #C41E3A; }
+.rv-label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: #1c1012; }
+.rv-ship-bar { transition: width .6s cubic-bezier(.22,1,.36,1); }
+@media (prefers-reduced-motion: reduce) { .rv-ship-bar { transition: none; } }
