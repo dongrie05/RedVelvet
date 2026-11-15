@@ -1,6 +1,6 @@
 'use client'
 
-import { generateFAQSchema } from '@/lib/seo'
+import { generateFAQSchema, serializeStructuredData } from '@/lib/seo'
 import { SEO_CONFIG } from '@/lib/seoConfig'
 
 interface FAQItem {
@@ -26,7 +26,7 @@ export default function AIOptimizedContent({ faqs = [], children }: AIOptimizedC
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqSchema),
+          __html: serializeStructuredData(faqSchema),
         }}
       />
       

@@ -5,7 +5,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import PerformanceOptimizer, { ResourceHints } from "@/components/performance/PerformanceOptimizer";
-import { generateMetadata, generateOrganizationSchema, generateWebSiteSchema } from "@/lib/seo";
+import { generateMetadata, generateOrganizationSchema, generateWebSiteSchema, serializeStructuredData } from "@/lib/seo";
 import { SEO_CONFIG } from "@/lib/seoConfig";
 
 const inter = Inter({
@@ -41,13 +41,13 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationSchema),
+            __html: serializeStructuredData(organizationSchema),
           }}
         />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(websiteSchema),
+            __html: serializeStructuredData(websiteSchema),
           }}
         />
       </head>

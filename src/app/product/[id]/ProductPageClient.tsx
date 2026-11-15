@@ -9,7 +9,7 @@ import { useCart } from '@/hooks/useCart'
 import { useWishlist } from '@/hooks/useWishlist'
 import ProductCard from '@/components/product/ProductCard'
 import { Product } from '@/lib/supabase'
-import { generateProductSchema, generateBreadcrumbSchema } from '@/lib/seo'
+import { generateProductSchema, generateBreadcrumbSchema, serializeStructuredData } from '@/lib/seo'
 import { formatCategoryDisplay, getCategorySlug } from '@/lib/categoryUtils'
 import { formatPrice, FREE_SHIPPING_THRESHOLD, MAX_QTY_PER_ITEM } from '@/lib/shop'
 import { BUSINESS } from '@/lib/business'
@@ -91,8 +91,8 @@ export default function ProductPageClient({ product, related = [] }: { product: 
   const site = SEO_CONFIG.site.url
   let productSchema = '', breadcrumbSchema = ''
   try {
-    productSchema = JSON.stringify(generateProductSchema({ ...product, descricao: product.descricao ?? product.nome }))
-    breadcrumbSchema = JSON.stringify(generateBreadcrumbSchema([
+    productSchema = serializeStructuredData(generateProductSchema({ ...product, descricao: product.descricao ?? product.nome }))
+    breadcrumbSchema = serializeStructuredData(generateBreadcrumbSchema([
       { name: 'Início', url: `${site}/` },
       { name: 'Loja', url: `${site}/shop/` },
       { name: category, url: `${site}${categoryHref}` },

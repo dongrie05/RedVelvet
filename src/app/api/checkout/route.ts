@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
 import { getMollie, getSiteUrl } from '@/lib/mollie'
 import {
@@ -70,6 +71,7 @@ export async function POST(req: Request) {
 
   const qtyByProduct = new Map<string, number>()
   items.forEach((i) => qtyByProduct.set(i.produto_id, (qtyByProduct.get(i.produto_id) || 0) + i.quantidade))
+  if ([...qtyByProduct.values()].some(qty => qty > MAX_QTY_PER_ITEM)) return bad('Quantidade máxima por produto ultrapassada.')
 
   const lines = []
   for (const it of items) {
@@ -95,6 +97,13 @@ export async function POST(req: Request) {
   const subtotal = round2(lines.reduce((s, l) => s + l.total, 0))
   const shipping = calculateShipping(subtotal, customer.pais)
   const total = round2(subtotal + shipping)
+
+  // Verificar a configuração antes de reservar qualquer artigo.
+  let mollie: ReturnType<typeof getMollie>, site: string
+  try { mollie = getMollie(); site = getSiteUrl(req) } catch (e) {
+    console.error('Configuração de pagamento inválida', e)
+    return bad('O pagamento está temporariamente indisponível.', 503)
+  }
 
   // Associar a cliente registado (se existir com o mesmo email)
   const { data: existingCustomer } = await supabase
@@ -124,11 +133,32 @@ export async function POST(req: Request) {
     return bad('Não foi possível criar a encomenda. Tente novamente.', 500)
   }
 
+  // Reserva o stock numa transação antes de iniciar o pagamento.
+  const { error: reservationError } = await supabase.rpc('reserve_checkout_order', { p_order_id: order.id })
+  if (reservationError) {
+    console.error('Erro a reservar stock', reservationError)
+    if (reservationError.message?.includes('stock_or_price_changed')) {
+      await supabase.from('orders').update({ status: 'cancelled' }).eq('id', order.id).eq('status', 'pending').eq('stock_reserved', false)
+      return bad('O preço ou o stock mudou. Atualize o carrinho e tente novamente.', 409)
+    }
+    // O resultado pode ser incerto após uma falha de rede; manter para revisão.
+    return bad('Não foi possível confirmar a reserva. Contacte a loja antes de tentar novamente.', 503)
+  }
+  revalidatePath('/'); revalidatePath('/shop'); revalidatePath('/product/[id]', 'page')
+
+  // O marcador é escrito antes da chamada à Mollie, para impedir libertações inseguras.
+  const { data: paymentAttempt, error: attemptError } = await supabase.from('orders')
+    .update({ payment_attempt_started: true }).eq('id', order.id).eq('status', 'pending')
+    .eq('stock_reserved', true).eq('payment_attempt_started', false).select('id').maybeSingle()
+  if (attemptError || !paymentAttempt) {
+    console.error('Não foi possível confirmar o início do pagamento', attemptError)
+    return bad('Não foi possível iniciar o pagamento. Contacte a loja antes de tentar novamente.', 503)
+  }
+
   // ---- Pagamento Mollie ----
   try {
-    const site = getSiteUrl(req)
     const isLocal = site.includes('localhost') || site.includes('127.0.0.1')
-    const payment = await getMollie().payments.create({
+    const payment = await mollie.payments.create({
       amount: { currency: 'EUR', value: total.toFixed(2) },
       description: `RedVelvet ${order.numero_pedido}`,
       redirectUrl: `${site}/checkout/success/?order=${order.id}&t=${order.access_token}`,
@@ -139,14 +169,16 @@ export async function POST(req: Request) {
       billingEmail: customer.email,
     } as Parameters<ReturnType<typeof getMollie>['payments']['create']>[0])
 
-    await supabase.from('orders').update({ mollie_payment_id: payment.id }).eq('id', order.id)
-
     const url = payment.getCheckoutUrl()
     if (!url) throw new Error('Mollie sem checkout URL')
+    const { error: linkError } = await supabase.from('orders').update({ mollie_payment_id: payment.id }).eq('id', order.id).is('mollie_payment_id', null)
+    if (linkError) throw linkError
     return NextResponse.json({ url, order: order.numero_pedido })
   } catch (e) {
     console.error('Erro Mollie', e)
-    await supabase.from('orders').update({ status: 'cancelled' }).eq('id', order.id)
-    return bad('O serviço de pagamento não respondeu. Tente novamente dentro de momentos.', 502)
+    // Uma falha de rede pode ocorrer depois da Mollie criar o pagamento.
+    // A reserva mantém-se até o pagamento ser confirmado ou reconciliado.
+    await supabase.from('orders').update({ status: 'payment_setup_error' }).eq('id', order.id).eq('status', 'pending')
+    return bad('Não foi possível iniciar o pagamento. Contacte a loja antes de tentar novamente.', 502)
   }
 }

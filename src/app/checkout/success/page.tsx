@@ -28,7 +28,7 @@ function CheckoutSuccessContent() {
         if (!res.ok) throw new Error()
         const data: OrderInfo = await res.json()
         setOrder(data)
-        if (data.status === 'paid') clearCart()
+        if (data.status === 'paid' || data.status === 'paid_stock_issue') clearCart()
         // Multibanco/transferência podem ficar pendentes; voltamos a verificar uns segundos
         if (data.status === 'pending' && ++tries < 6) timer = setTimeout(poll, 2500)
       } catch {
@@ -53,6 +53,7 @@ function CheckoutSuccessContent() {
 
   const paid = order?.status === 'paid'
   const cancelled = order?.status === 'cancelled'
+  const paidStockIssue = order?.status === 'paid_stock_issue'
 
   return (
     <div className="min-h-[60vh] bg-cream-50">
@@ -63,6 +64,12 @@ function CheckoutSuccessContent() {
             <h1 className="heading-luxury text-3xl mb-4">Obrigado pela sua encomenda!</h1>
             <p className="text-redvelvet-700 mb-2">Encomenda <strong>{order!.numero_pedido}</strong> · {formatPrice(Number(order!.total))}</p>
             <p className="text-redvelvet-700 mb-8">O pagamento foi confirmado. Vamos preparar o envio ({BUSINESS.shippingDays}).</p>
+          </>
+        ) : paidStockIssue ? (
+          <>
+            <Clock size={56} className="mx-auto text-redvelvet-500 mb-6" />
+            <h1 className="heading-luxury text-3xl mb-4">Pagamento confirmado</h1>
+            <p className="text-redvelvet-700 mb-8">A sua encomenda {order!.numero_pedido} precisa de uma verificação de disponibilidade. Contacte-nos para a resolver; não precisa de pagar novamente.</p>
           </>
         ) : cancelled ? (
           <>

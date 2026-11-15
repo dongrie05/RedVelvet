@@ -20,7 +20,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Quantidade inválida.' }, { status: 400 })
   }
   const { data, error } = await access.db.from('products').update({ stock: body.stock }).eq('id', body.id).eq('stock', body.previousStock).select('id,stock,updated_at').maybeSingle()
-  if (error) return NextResponse.json({ error: 'Não foi possível atualizar o stock.' }, { status: 500 })
+  if (error) return NextResponse.json({ error: error.message?.includes('stock_reserved_for_checkout') ? 'Há um pagamento em curso para este artigo. Aguarde a confirmação antes de alterar o stock.' : 'Não foi possível atualizar o stock.' }, { status: error.message?.includes('stock_reserved_for_checkout') ? 409 : 500 })
   if (!data) return NextResponse.json({ error: 'O stock foi alterado entretanto. Atualize a lista e tente novamente.' }, { status: 409 })
   revalidatePath('/')
   revalidatePath('/shop')

@@ -19,9 +19,9 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   if (!order) return NextResponse.json({ error: 'not found' }, { status: 404 })
 
   let status = order.status
-  if (status === 'pending' && order.mollie_payment_id) {
+  if (['pending', 'payment_setup_error'].includes(status) && order.mollie_payment_id) {
     try { status = (await syncOrderWithMollie(order.mollie_payment_id)) || status } catch (e) { console.error(e) }
   }
-  const { mollie_payment_id: _omit, ...pub } = order
-  return NextResponse.json({ ...pub, status })
+  const { id: orderId, numero_pedido, total, subtotal, custo_envio, lista_produtos, email_cliente } = order
+  return NextResponse.json({ id: orderId, numero_pedido, status, total, subtotal, custo_envio, lista_produtos, email_cliente })
 }

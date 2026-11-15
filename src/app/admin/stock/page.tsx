@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import ImportPanel from './ImportPanel'
 import ProductEditor, { EditableProduct } from './ProductEditor'
+import OrdersPanel from './OrdersPanel'
 
 type Product = EditableProduct & { codigo: string; referencia: string; stock: number }
 
@@ -15,6 +16,7 @@ export default function StockPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [signedIn, setSignedIn] = useState(false)
+  const [hasAccess, setHasAccess] = useState(false)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
   const [message, setMessage] = useState('')
@@ -23,14 +25,15 @@ export default function StockPage() {
     setLoading(true)
     const { data: { session } } = await supabase.auth.getSession()
     setSignedIn(!!session)
-    if (!session) { setProducts([]); setLoading(false); return }
+    if (!session) { setProducts([]); setHasAccess(false); setLoading(false); return }
     try {
       const response = await fetch('/api/admin/stock', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error)
       setProducts(result.data)
+      setHasAccess(true)
       setMessage('')
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Erro ao carregar produtos.') }
+    } catch (error) { setHasAccess(false); setMessage(error instanceof Error ? error.message : 'Erro ao carregar produtos.') }
     setLoading(false)
   }, [])
   useEffect(() => { void load() }, [load])
@@ -64,7 +67,8 @@ export default function StockPage() {
     {message && <p role="status" className="mt-4 rounded bg-white p-4 text-redvelvet-800">{message}</p>}
     {!signedIn && !loading && <form onSubmit={login} className="mt-8 max-w-md space-y-4 rounded-lg bg-white p-6 shadow-sm"><h2 className="text-xl font-semibold">Entrar</h2><label className="block">Email<input className="mt-1 w-full rounded border p-2" type="email" value={email} onChange={e => setEmail(e.target.value)} required /></label><label className="block">Palavra-passe<input className="mt-1 w-full rounded border p-2" type="password" value={password} onChange={e => setPassword(e.target.value)} required /></label><button className="rounded bg-redvelvet-700 px-4 py-2 text-white">Entrar</button></form>}
     {loading && <p className="mt-6">A carregar…</p>}
-    {signedIn && <><ImportPanel onDone={() => { void load() }} /><div className="mt-6 flex flex-wrap gap-3"><input aria-label="Pesquisar produtos" placeholder="Pesquisar por nome, código ou referência" value={query} onChange={e => setQuery(e.target.value)} className="min-w-0 flex-1 rounded border bg-white p-3" /><button onClick={() => void load()} className="rounded border bg-white px-4">Atualizar lista</button><button onClick={async () => { await supabase.auth.signOut(); setSignedIn(false); setProducts([]); setMessage('') }} className="rounded border bg-white px-4">Sair</button></div>
+    {signedIn && !hasAccess && !loading && <button onClick={async () => { await supabase.auth.signOut(); setSignedIn(false); setProducts([]); setMessage('') }} className="mt-4 rounded border bg-white px-4 py-2">Sair</button>}
+    {signedIn && hasAccess && <><OrdersPanel onChange={() => { void load() }} /><ImportPanel existingProducts={products} onDone={() => { void load() }} /><div className="mt-6 flex flex-wrap gap-3"><input aria-label="Pesquisar produtos" placeholder="Pesquisar por nome, código ou referência" value={query} onChange={e => setQuery(e.target.value)} className="min-w-0 flex-1 rounded border bg-white p-3" /><button onClick={() => void load()} className="rounded border bg-white px-4">Atualizar lista</button><button onClick={async () => { await supabase.auth.signOut(); setSignedIn(false); setHasAccess(false); setProducts([]); setMessage('') }} className="rounded border bg-white px-4">Sair</button></div>
     <p className="my-4 text-sm text-redvelvet-700">{filtered.length} produtos · O stock do ZSBMS não é atualizado automaticamente.</p>
     <div className="space-y-3">{filtered.map(product => <div key={product.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-white p-4 shadow-sm"><div><p className="font-semibold">{product.nome}</p><p className="text-sm text-gray-600">Código {product.codigo} · {product.referencia}</p><p className="mt-1 text-sm">{product.stock > 0 ? `${product.stock} em stock` : 'Esgotado'}</p></div><div className="flex flex-wrap gap-2"><button onClick={() => setEditing(product)} className="rounded border px-4 py-2">Editar produto</button><button disabled={busy !== null || product.stock <= 0} onClick={() => void update(product, product.stock - 1)} className="rounded bg-redvelvet-700 px-4 py-2 text-white disabled:opacity-40">Vendi 1</button><button disabled={busy !== null} onClick={() => void update(product, product.stock + 1)} className="rounded border px-4 py-2 disabled:opacity-40">Repor 1</button><button disabled={busy !== null || product.stock <= 0} onClick={() => void update(product, 0)} className="rounded border px-4 py-2 disabled:opacity-40">Esgotar</button></div></div>)}</div>{editing && <ProductEditor product={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); void load() }} />}</>}
   </div></main>
