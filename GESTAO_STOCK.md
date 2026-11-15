@@ -22,3 +22,7 @@ Em `/admin/stock`, entrar com a conta autorizada. Selecionar o relatório de pro
 Após uma venda física, procurar o produto e selecionar `Vendi 1`. O botão `Repor 1` corrige uma unidade e `Esgotar` coloca a quantidade a zero. Uma nova importação substitui o stock pelo valor do relatório, pelo que este deve ser atual e incluir as vendas já registadas. O ZSBMS não é atualizado pelo site.
 
 O checkout verifica stock ao iniciar o pagamento. Sem reserva entre o início e a confirmação do pagamento, ainda pode haver vendas simultâneas do mesmo artigo; é necessário rever esse fluxo antes do lançamento.
+
+## Editar produtos e fotografias
+
+No painel, escolha «Editar produto» para atualizar nome, descrição, categoria, preço e tamanhos e para adicionar até três imagens JPEG, PNG ou WebP, com um máximo de 3 MB por ficheiro. A primeira é a principal; as restantes aparecem na galeria. Grave as alterações para as associar ao produto. A imagem é enviada para o bucket público `products` através de uma rota protegida no servidor. Retirar uma imagem da ficha não elimina o ficheiro do armazenamento; um carregamento cancelado pode deixar um ficheiro sem associação. O bucket tem de existir e a service role tem de estar configurada na Vercel. A importação do ZSBMS preserva o nome, a descrição, a categoria e as fotografias dos produtos existentes, mas substitui preço, IVA e stock pelos valores do relatório.

@@ -4,12 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import ImportPanel from './ImportPanel'
+import ProductEditor, { EditableProduct } from './ProductEditor'
 
-type Product = { id: string; codigo: string; referencia: string; nome: string; categoria: string; preco: number; stock: number }
+type Product = EditableProduct & { codigo: string; referencia: string; stock: number }
 
 export default function StockPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [query, setQuery] = useState('')
+  const [editing, setEditing] = useState<Product | null>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [signedIn, setSignedIn] = useState(false)
@@ -50,7 +52,7 @@ export default function StockPage() {
       const response = await fetch('/api/admin/stock', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ id: product.id, stock, previousStock: product.stock }) })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error)
-      setProducts(current => current.map(p => p.id === product.id ? { ...p, stock: result.data.stock } : p))
+      setProducts(current => current.map(p => p.id === product.id ? { ...p, stock: result.data.stock, updated_at: result.data.updated_at } : p))
       setMessage(`Stock de ${product.nome} atualizado para ${stock}.`)
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Erro ao atualizar stock.') }
     setBusy(null)
@@ -64,6 +66,6 @@ export default function StockPage() {
     {loading && <p className="mt-6">A carregar…</p>}
     {signedIn && <><ImportPanel onDone={() => { void load() }} /><div className="mt-6 flex flex-wrap gap-3"><input aria-label="Pesquisar produtos" placeholder="Pesquisar por nome, código ou referência" value={query} onChange={e => setQuery(e.target.value)} className="min-w-0 flex-1 rounded border bg-white p-3" /><button onClick={() => void load()} className="rounded border bg-white px-4">Atualizar lista</button><button onClick={async () => { await supabase.auth.signOut(); setSignedIn(false); setProducts([]); setMessage('') }} className="rounded border bg-white px-4">Sair</button></div>
     <p className="my-4 text-sm text-redvelvet-700">{filtered.length} produtos · O stock do ZSBMS não é atualizado automaticamente.</p>
-    <div className="space-y-3">{filtered.map(product => <div key={product.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-white p-4 shadow-sm"><div><p className="font-semibold">{product.nome}</p><p className="text-sm text-gray-600">Código {product.codigo} · {product.referencia}</p><p className="mt-1 text-sm">{product.stock > 0 ? `${product.stock} em stock` : 'Esgotado'}</p></div><div className="flex gap-2"><button disabled={busy !== null || product.stock <= 0} onClick={() => void update(product, product.stock - 1)} className="rounded bg-redvelvet-700 px-4 py-2 text-white disabled:opacity-40">Vendi 1</button><button disabled={busy !== null} onClick={() => void update(product, product.stock + 1)} className="rounded border px-4 py-2 disabled:opacity-40">Repor 1</button><button disabled={busy !== null || product.stock <= 0} onClick={() => void update(product, 0)} className="rounded border px-4 py-2 disabled:opacity-40">Esgotar</button></div></div>)}</div></>}
+    <div className="space-y-3">{filtered.map(product => <div key={product.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-white p-4 shadow-sm"><div><p className="font-semibold">{product.nome}</p><p className="text-sm text-gray-600">Código {product.codigo} · {product.referencia}</p><p className="mt-1 text-sm">{product.stock > 0 ? `${product.stock} em stock` : 'Esgotado'}</p></div><div className="flex flex-wrap gap-2"><button onClick={() => setEditing(product)} className="rounded border px-4 py-2">Editar produto</button><button disabled={busy !== null || product.stock <= 0} onClick={() => void update(product, product.stock - 1)} className="rounded bg-redvelvet-700 px-4 py-2 text-white disabled:opacity-40">Vendi 1</button><button disabled={busy !== null} onClick={() => void update(product, product.stock + 1)} className="rounded border px-4 py-2 disabled:opacity-40">Repor 1</button><button disabled={busy !== null || product.stock <= 0} onClick={() => void update(product, 0)} className="rounded border px-4 py-2 disabled:opacity-40">Esgotar</button></div></div>)}</div>{editing && <ProductEditor product={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); void load() }} />}</>}
   </div></main>
 }
