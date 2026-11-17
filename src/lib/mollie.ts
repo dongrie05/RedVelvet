@@ -14,8 +14,15 @@ export function getMollie(): MollieClient {
 /** URL pública do site (para redirect/webhook da Mollie). */
 export function getSiteUrl(req?: Request): string {
   const env = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL
-  if (env) return env.replace(/\/$/, '')
-  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  const configured = env || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : '')
+  if (configured) {
+    const url = new URL(configured)
+    if (!['http:', 'https:'].includes(url.protocol) || (process.env.NODE_ENV === 'production' && (url.protocol !== 'https:' || ['localhost', '127.0.0.1'].includes(url.hostname)))) {
+      throw new Error('Configure um URL público HTTPS válido para o pagamento.')
+    }
+    return url.origin
+  }
+  if (process.env.NODE_ENV === 'production') throw new Error('Configure NEXT_PUBLIC_APP_URL para o pagamento.')
   if (req) return new URL(req.url).origin
   return 'http://localhost:3000'
 }

@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { SEO_CONFIG } from './seoConfig'
+import type { Product } from './supabase'
 
 export interface SEOConfig {
   title: string
@@ -8,7 +9,7 @@ export interface SEOConfig {
   canonical?: string
   ogImage?: string
   ogType?: 'website' | 'article' | 'product'
-  structuredData?: any
+  structuredData?: unknown
 }
 
 export function generateMetadata(config: SEOConfig): Metadata {
@@ -101,7 +102,7 @@ export function generateOrganizationSchema() {
   }
 }
 
-export function generateProductSchema(product: any) {
+export function generateProductSchema(product: Product) {
   const siteUrl = SEO_CONFIG.site.url
   const img = product.imagem_url
   const imageUrl =
@@ -188,4 +189,9 @@ export function generateWebSiteSchema() {
       'query-input': 'required name=search_term_string',
     },
   }
+}
+
+/** Serializa JSON-LD sem permitir que dados fechem o elemento script. */
+export function serializeStructuredData(value: unknown): string {
+  return JSON.stringify(value).replace(/</g, '\\u003c')
 }
